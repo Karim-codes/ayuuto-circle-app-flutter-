@@ -302,6 +302,39 @@ class GroupService {
     }).eq('id', requestId);
   }
 
+  // ── History ─────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> getUserHistory() async {
+    if (_userId == null) return {'payments': [], 'payouts': []};
+
+    // Get member IDs for the current user
+    final memberRows = await _client
+        .from('members')
+        .select('id, group_id')
+        .eq('user_id', _userId!);
+
+    final memberIds =
+        (memberRows as List).map((r) => r['id'] as String).toList();
+
+    if (memberIds.isEmpty) return {'payments': [], 'payouts': []};
+
+    // Get all payments (including voided) for this user's members
+    final payments = await _client
+        .from('payments')
+        .select('*, groups!inner(name, currency, contribution_amount)')
+        .inFilter('member_id', memberIds)
+        .order('created_at', ascending: false);
+
+    // Get all payouts received by this user
+    final payouts = await _client
+        .from('payouts')
+        .select('*, groups!inner(name, currency)')
+        .inFilter('recipient_member_id', memberIds)
+        .order('created_at', ascending: false);
+
+    return {'payments': payments, 'payouts': payouts};
+  }
+
   // ── Helpers ─────────────────────────────────────────────
 
   Member? getNextRecipient(List<Member> members) {

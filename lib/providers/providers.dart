@@ -76,6 +76,14 @@ final payoutsProvider =
   return ref.watch(groupServiceProvider).getPayouts(groupId);
 });
 
+// ── History ──────────────────────────────────────────────
+
+final userHistoryProvider =
+    FutureProvider<Map<String, dynamic>>((ref) async {
+  ref.watch(currentUserProvider);
+  return ref.watch(groupServiceProvider).getUserHistory();
+});
+
 // ── Join Requests ─────────────────────────────────────────
 
 final pendingJoinRequestsProvider =

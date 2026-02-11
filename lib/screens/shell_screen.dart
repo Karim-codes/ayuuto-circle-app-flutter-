@@ -43,9 +43,9 @@ class ShellScreen extends StatelessWidget {
                   isAction: true,
                 ),
                 _NavItem(
-                  icon: Icons.link_outlined,
-                  activeIcon: Icons.link,
-                  label: 'Join',
+                  icon: Icons.receipt_long_outlined,
+                  activeIcon: Icons.receipt_long_rounded,
+                  label: 'History',
                   isSelected: navigationShell.currentIndex == 1,
                   onTap: () => navigationShell.goBranch(
                     1,

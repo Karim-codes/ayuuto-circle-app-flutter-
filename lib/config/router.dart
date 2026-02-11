@@ -8,6 +8,7 @@ import '../screens/group/create_group_screen.dart';
 import '../screens/group/group_detail_screen.dart';
 import '../screens/group/group_created_screen.dart';
 import '../screens/group/invite_screen.dart';
+import '../screens/history/history_screen.dart';
 import '../screens/join/join_group_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/splash_screen.dart';
@@ -15,7 +16,7 @@ import '../screens/shell_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _homeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'home');
-final _joinNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'join');
+final _historyNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'history');
 final _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
 
 final router = GoRouter(
@@ -63,13 +64,13 @@ final router = GoRouter(
             ),
           ],
         ),
-        // Tab 1: Join
+        // Tab 1: History
         StatefulShellBranch(
-          navigatorKey: _joinNavigatorKey,
+          navigatorKey: _historyNavigatorKey,
           routes: [
             GoRoute(
-              path: '/join',
-              builder: (context, state) => const JoinGroupScreen(),
+              path: '/history',
+              builder: (context, state) => const HistoryScreen(),
             ),
           ],
         ),
@@ -108,6 +109,11 @@ final router = GoRouter(
         final groupName = state.uri.queryParameters['name'] ?? 'Your Circle';
         return GroupCreatedScreen(groupId: groupId, groupName: groupName);
       },
+    ),
+    GoRoute(
+      path: '/join',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const JoinGroupScreen(),
     ),
     GoRoute(
       path: '/group/:id/invite',
