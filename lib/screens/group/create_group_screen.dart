@@ -143,7 +143,8 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
       ref.invalidate(myGroupsProvider);
 
       if (mounted) {
-        context.go('/group/$groupId');
+        final name = Uri.encodeComponent(_nameController.text.trim());
+        context.go('/group-created/$groupId?name=$name');
       }
     } catch (e) {
       if (mounted) {

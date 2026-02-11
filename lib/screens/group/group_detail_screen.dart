@@ -135,6 +135,32 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
                                     .advanceCycle(widget.groupId);
                                 _refresh();
                               }
+                            } else if (value == 'delete') {
+                              final confirm = await _showConfirmDialog(
+                                context,
+                                'Delete Circle',
+                                'Are you sure you want to permanently delete this circle? This action cannot be undone.',
+                              );
+                              if (confirm == true && context.mounted) {
+                                try {
+                                  await ref
+                                      .read(groupServiceProvider)
+                                      .deleteGroup(widget.groupId);
+                                  ref.invalidate(myGroupsProvider);
+                                  if (context.mounted) {
+                                    context.go('/home');
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Failed to delete: $e'),
+                                        backgroundColor: AppColors.error,
+                                      ),
+                                    );
+                                  }
+                                }
+                              }
                             }
                           },
                           itemBuilder: (_) => [
@@ -146,6 +172,18 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
                                       size: 18, color: AppColors.textSecondary),
                                   SizedBox(width: 10),
                                   Text('New Round'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete_outline_rounded,
+                                      size: 18, color: AppColors.error),
+                                  SizedBox(width: 10),
+                                  Text('Delete Circle',
+                                      style: TextStyle(color: AppColors.error)),
                                 ],
                               ),
                             ),

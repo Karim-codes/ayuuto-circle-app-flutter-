@@ -6,6 +6,7 @@ import '../screens/auth/sign_up_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/group/create_group_screen.dart';
 import '../screens/group/group_detail_screen.dart';
+import '../screens/group/group_created_screen.dart';
 import '../screens/group/invite_screen.dart';
 import '../screens/join/join_group_screen.dart';
 import '../screens/settings/settings_screen.dart';
@@ -97,6 +98,15 @@ final router = GoRouter(
       builder: (context, state) {
         final groupId = state.pathParameters['id']!;
         return GroupDetailScreen(groupId: groupId);
+      },
+    ),
+    GoRoute(
+      path: '/group-created/:id',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final groupId = state.pathParameters['id']!;
+        final groupName = state.uri.queryParameters['name'] ?? 'Your Circle';
+        return GroupCreatedScreen(groupId: groupId, groupName: groupName);
       },
     ),
     GoRoute(
