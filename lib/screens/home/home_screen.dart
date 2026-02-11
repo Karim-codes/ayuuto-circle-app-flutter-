@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,52 +28,68 @@ class HomeScreen extends ConsumerWidget {
               // Header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                  child: Row(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            profileAsync.when(
-                              data: (profile) => Text(
-                                'Hello, ${profile?.fullName.split(' ').first ?? 'there'}',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineMedium,
-                              ),
-                              loading: () => Text(
-                                'Hello...',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineMedium,
-                              ),
-                              error: (e, st) => Text(
-                                'Hello',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineMedium,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Your Ayuuto circles',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
+                      profileAsync.when(
+                        data: (profile) => Text(
+                          'Hello, ${profile?.fullName.split(' ').first ?? 'there'}',
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        loading: () => const Text(
+                          'Hello...',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        error: (e, st) => const Text(
+                          'Hello',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Your Ayuuto circles',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
 
+              // Summary card — only show when groups exist
+              groupsAsync.when(
+                data: (groups) {
+                  if (groups.isEmpty) return const SliverToBoxAdapter(child: SizedBox(height: 16));
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                      child: _SummaryCard(groups: groups),
+                    ),
+                  );
+                },
+                loading: () => const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                error: (e, st) => const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              ),
+
               // Action buttons
               SliverToBoxAdapter(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                   child: Row(
                     children: [
                       Expanded(
@@ -95,13 +112,33 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
 
+              // Section label
+              groupsAsync.when(
+                data: (groups) {
+                  if (groups.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+                      child: Text(
+                        'Your Circles',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                error: (e, st) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+              ),
+
               // Groups list
               groupsAsync.when(
                 data: (groups) {
                   if (groups.isEmpty) {
-                    return SliverFillRemaining(
-                      child: _EmptyState(),
-                    );
+                    return SliverFillRemaining(child: _EmptyState());
                   }
                   return SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -131,10 +168,8 @@ class HomeScreen extends ConsumerWidget {
                         const Icon(Icons.error_outline,
                             size: 48, color: AppColors.textTertiary),
                         const SizedBox(height: 16),
-                        Text(
-                          'Failed to load groups',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
+                        Text('Failed to load groups',
+                            style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 8),
                         TextButton(
                           onPressed: () => ref.invalidate(myGroupsProvider),
@@ -155,6 +190,162 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
+// ── Summary Card ─────────────────────────────────────────
+
+class _SummaryCard extends StatelessWidget {
+  final List<GroupWithStats> groups;
+  const _SummaryCard({required this.groups});
+
+  @override
+  Widget build(BuildContext context) {
+    final totalPot = groups.fold<double>(0, (sum, g) => sum + g.totalPot);
+    final totalMembers = groups.fold<int>(0, (sum, g) => sum + g.memberCount);
+    final totalPaid = groups.fold<int>(0, (sum, g) => sum + (g.memberCount - g.pendingCount));
+    final progress = totalMembers > 0 ? totalPaid / totalMembers : 0.0;
+    final pct = (progress * 100).round();
+
+    // Use first group's currency symbol, or £ as fallback
+    final symbol = groups.isNotEmpty ? groups.first.currencySymbol : '£';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary,
+            Color(0xFF143D6B),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          // Left side — pot info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'TOTAL POT',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                    color: Colors.white.withValues(alpha: 0.6),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '$symbol${_formatAmount(totalPot)}',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'across ${groups.length} ${groups.length == 1 ? 'group' : 'groups'}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.55),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Right side — progress ring
+          SizedBox(
+            width: 72,
+            height: 72,
+            child: CustomPaint(
+              painter: _ProgressRingPainter(
+                progress: progress,
+                trackColor: Colors.white.withValues(alpha: 0.12),
+                progressColor: AppColors.accent,
+                strokeWidth: 6,
+              ),
+              child: Center(
+                child: Text(
+                  '$pct%',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatAmount(double amount) {
+    if (amount >= 1000) {
+      final formatted = (amount / 1000).toStringAsFixed(
+          amount % 1000 == 0 ? 0 : 1);
+      return '${formatted}k';
+    }
+    return amount == amount.roundToDouble()
+        ? amount.toStringAsFixed(0)
+        : amount.toStringAsFixed(2);
+  }
+}
+
+class _ProgressRingPainter extends CustomPainter {
+  final double progress;
+  final Color trackColor;
+  final Color progressColor;
+  final double strokeWidth;
+
+  _ProgressRingPainter({
+    required this.progress,
+    required this.trackColor,
+    required this.progressColor,
+    required this.strokeWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    // Track
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(center, radius, trackPaint);
+
+    // Progress arc
+    final progressPaint = Paint()
+      ..color = progressColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      2 * math.pi * progress,
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ProgressRingPainter oldDelegate) =>
+      oldDelegate.progress != progress;
+}
+
+// ── Action Button ────────────────────────────────────────
+
 class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -170,20 +361,20 @@ class _ActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.surface,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.divider),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: AppColors.accent, size: 22),
+              Icon(icon, color: AppColors.accent, size: 20),
               const SizedBox(width: 8),
               Text(
                 label,
@@ -201,14 +392,16 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
+// ── Group Card ───────────────────────────────────────────
+
 class _GroupCard extends StatelessWidget {
   final GroupWithStats group;
-
   const _GroupCard({required this.group});
 
   @override
   Widget build(BuildContext context) {
     final paidCount = group.memberCount - group.pendingCount;
+    final progress = group.memberCount > 0 ? paidCount / group.memberCount : 0.0;
 
     return Material(
       color: AppColors.surface,
@@ -222,118 +415,123 @@ class _GroupCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.divider),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              // Header row
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        group.name.isNotEmpty
-                            ? group.name[0].toUpperCase()
-                            : '?',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.accent,
-                        ),
-                      ),
+              // Avatar
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Center(
+                  child: Text(
+                    group.name.isNotEmpty ? group.name[0].toUpperCase() : '?',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.accent,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+              ),
+              const SizedBox(width: 14),
+
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Text(
-                          group.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                            color: AppColors.textPrimary,
+                        Expanded(
+                          child: Text(
+                            group.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color: AppColors.textPrimary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${group.memberCount} members · ${group.frequencyLabel}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
+                        if (group.pendingRequestsCount > 0)
+                          Container(
+                            margin: const EdgeInsets.only(left: 6),
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppColors.warning,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
                       ],
                     ),
-                  ),
-                  // Pending requests badge
-                  if (group.pendingRequestsCount > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${group.pendingRequestsCount} pending',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.warning,
-                        ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${group.memberCount} members · ${group.frequencyLabel} · Cycle ${group.currentCycle}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textTertiary,
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Stats row
-              Row(
-                children: [
-                  // Pot amount
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 8),
+                    // Progress bar
+                    Row(
                       children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(3),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              minHeight: 5,
+                              backgroundColor: AppColors.divider,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                paidCount == group.memberCount
+                                    ? AppColors.success
+                                    : AppColors.accent,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
                         Text(
-                          'Total Pot',
+                          '$paidCount/${group.memberCount}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${group.currencySymbol}${group.totalPot.toStringAsFixed(group.totalPot == group.totalPot.roundToDouble() ? 0 : 2)}',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                            color: paidCount == group.memberCount
+                                ? AppColors.success
+                                : AppColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Amount
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${group.currencySymbol}${group.totalPot.toStringAsFixed(group.totalPot == group.totalPot.roundToDouble() ? 0 : 2)}',
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                  // Cycle
-                  _StatChip(
-                    label: 'Cycle ${group.currentCycle}',
-                    icon: Icons.refresh,
-                  ),
-                  const SizedBox(width: 8),
-                  // Payment progress
-                  _StatChip(
-                    label: '$paidCount/${group.memberCount} paid',
-                    icon: Icons.check_circle_outline,
-                    color: paidCount == group.memberCount
-                        ? AppColors.success
-                        : null,
+                  const SizedBox(height: 2),
+                  const Text(
+                    'pot',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textTertiary,
+                    ),
                   ),
                 ],
               ),
@@ -345,44 +543,7 @@ class _GroupCard extends StatelessWidget {
   }
 }
 
-class _StatChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color? color;
-
-  const _StatChip({
-    required this.label,
-    required this.icon,
-    this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final chipColor = color ?? AppColors.textSecondary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: chipColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: chipColor),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: chipColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// ── Empty State ──────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
   @override
@@ -397,12 +558,12 @@ class _EmptyState extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: AppColors.accent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
+                color: AppColors.accent.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(24),
               ),
               child: const Icon(
                 Icons.group_add_outlined,
-                size: 40,
+                size: 36,
                 color: AppColors.accent,
               ),
             ),
@@ -413,7 +574,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Create your first Ayuuto circle or join an existing one with an invite code.',
+              'Create your first Ayuuto circle or join\nan existing one with an invite code.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
