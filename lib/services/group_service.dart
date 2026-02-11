@@ -16,9 +16,23 @@ class GroupService {
   // ── Groups ──────────────────────────────────────────────
 
   Future<List<GroupWithStats>> getMyGroups() async {
+    if (_userId == null) return [];
+
+    // Get group IDs where the current user is a member
+    final memberRows = await _client
+        .from('members')
+        .select('group_id')
+        .eq('user_id', _userId!);
+
+    final groupIds =
+        (memberRows as List).map((r) => r['group_id'] as String).toList();
+
+    if (groupIds.isEmpty) return [];
+
     final data = await _client
         .from('groups_with_stats')
         .select()
+        .inFilter('id', groupIds)
         .order('created_at', ascending: false);
 
     return (data as List)
