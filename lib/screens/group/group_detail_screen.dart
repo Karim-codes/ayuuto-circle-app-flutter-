@@ -80,96 +80,98 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
     final progress = totalMembers > 0 ? paidCount / totalMembers : 0.0;
     final totalPot = group.contributionAmount * totalMembers;
 
-    return SafeArea(
-      child: Column(
-        children: [
-          // ── Top bar ──
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  onPressed: () => context.go('/home'),
-                ),
-                const Spacer(),
-                if (isOrganizer)
-                  IconButton(
-                    icon: const Icon(Icons.person_add_alt_1_outlined),
-                    onPressed: () =>
-                        context.push('/group/${widget.groupId}/invite'),
-                  ),
-                if (isOrganizer)
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_horiz_rounded),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    onSelected: (value) async {
-                      if (value == 'reset') {
-                        final confirm = await _showConfirmDialog(
-                          context,
-                          'New Round',
-                          'Start a new cycle? This resets all payout statuses.',
-                        );
-                        if (confirm == true) {
-                          await ref
-                              .read(groupServiceProvider)
-                              .advanceCycle(widget.groupId);
-                          _refresh();
-                        }
-                      }
-                    },
-                    itemBuilder: (_) => [
-                      const PopupMenuItem(
-                        value: 'reset',
-                        child: Row(
-                          children: [
-                            Icon(Icons.refresh_rounded,
-                                size: 18, color: AppColors.textSecondary),
-                            SizedBox(width: 10),
-                            Text('New Round'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
+    return Column(
+      children: [
+        // ── Full-width gradient header ──
+        Container(
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.primary, Color(0xFF143D6B)],
             ),
           ),
-
-          // ── Header card ──
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppColors.primary, Color(0xFF143D6B)],
+          child: SafeArea(
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top bar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_rounded,
+                            color: Colors.white),
+                        onPressed: () => context.go('/home'),
+                      ),
+                      const Spacer(),
+                      if (isOrganizer)
+                        IconButton(
+                          icon: const Icon(Icons.person_add_alt_1_outlined,
+                              color: Colors.white),
+                          onPressed: () =>
+                              context.push('/group/${widget.groupId}/invite'),
+                        ),
+                      if (isOrganizer)
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_horiz_rounded,
+                              color: Colors.white),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                          onSelected: (value) async {
+                            if (value == 'reset') {
+                              final confirm = await _showConfirmDialog(
+                                context,
+                                'New Round',
+                                'Start a new cycle? This resets all payout statuses.',
+                              );
+                              if (confirm == true) {
+                                await ref
+                                    .read(groupServiceProvider)
+                                    .advanceCycle(widget.groupId);
+                                _refresh();
+                              }
+                            }
+                          },
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(
+                              value: 'reset',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.refresh_rounded,
+                                      size: 18, color: AppColors.textSecondary),
+                                  SizedBox(width: 10),
+                                  Text('New Round'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+
+                // Group name + progress ring
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  child: Row(
                     children: [
                       Expanded(
                         child: Text(
                           group.name,
                           style: const TextStyle(
-                            fontSize: 22,
+                            fontSize: 24,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
                           ),
                         ),
                       ),
-                      // Mini progress ring
                       SizedBox(
-                        width: 44,
-                        height: 44,
+                        width: 48,
+                        height: 48,
                         child: CustomPaint(
                           painter: _ProgressRingPainter(
                             progress: progress,
@@ -181,7 +183,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
                             child: Text(
                               '$paidCount/$totalMembers',
                               style: const TextStyle(
-                                fontSize: 10,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
                               ),
@@ -191,9 +193,12 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
-                  // Stats row
-                  Row(
+                ),
+
+                // Info pills + pot
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                  child: Row(
                     children: [
                       _InfoPill(
                         label: '${group.currencySymbol}${group.contributionAmount.toStringAsFixed(group.contributionAmount == group.contributionAmount.roundToDouble() ? 0 : 2)}',
@@ -213,71 +218,69 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-
-          // ── Tab bar ──
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.all(3),
-            child: TabBar(
-              controller: _tabController,
-              indicator: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: Colors.transparent,
-              labelColor: AppColors.textPrimary,
-              unselectedLabelColor: AppColors.textTertiary,
-              labelStyle: const TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w600),
-              unselectedLabelStyle: const TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w500),
-              tabs: const [
-                Tab(text: 'Members'),
-                Tab(text: 'Payouts'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 4),
-
-          // ── Tab content ──
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _MembersTab(
-                  groupId: widget.groupId,
-                  group: group,
-                  isOrganizer: isOrganizer,
-                  onRefresh: _refresh,
-                ),
-                _PayoutsTab(
-                  groupId: widget.groupId,
-                  group: group,
-                  isOrganizer: isOrganizer,
-                  onRefresh: _refresh,
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+
+        // ── Segmented tab bar ──
+        Container(
+          margin: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceVariant,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.all(3),
+          child: TabBar(
+            controller: _tabController,
+            indicator: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            indicatorSize: TabBarIndicatorSize.tab,
+            dividerColor: Colors.transparent,
+            labelColor: AppColors.textPrimary,
+            unselectedLabelColor: AppColors.textTertiary,
+            labelStyle:
+                const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            unselectedLabelStyle:
+                const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            tabs: const [
+              Tab(text: 'Members'),
+              Tab(text: 'Payouts'),
+            ],
+          ),
+        ),
+
+        // ── Tab content ──
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _MembersTab(
+                groupId: widget.groupId,
+                group: group,
+                isOrganizer: isOrganizer,
+                onRefresh: _refresh,
+              ),
+              _PayoutsTab(
+                groupId: widget.groupId,
+                group: group,
+                isOrganizer: isOrganizer,
+                onRefresh: _refresh,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
