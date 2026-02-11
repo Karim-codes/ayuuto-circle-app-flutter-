@@ -86,30 +86,37 @@ class HomeScreen extends ConsumerWidget {
                 error: (e, st) => const SliverToBoxAdapter(child: SizedBox(height: 16)),
               ),
 
-              // Action buttons
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _ActionButton(
-                          icon: Icons.add_circle_outline,
-                          label: 'New Circle',
-                          onTap: () => context.push('/create-group'),
-                        ),
+              // Action buttons — only show when groups exist
+              groupsAsync.when(
+                data: (groups) {
+                  if (groups.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _ActionButton(
+                              icon: Icons.add_circle_outline,
+                              label: 'New Circle',
+                              onTap: () => context.push('/create-group'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _ActionButton(
+                              icon: Icons.link,
+                              label: 'Join Circle',
+                              onTap: () => context.push('/join'),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _ActionButton(
-                          icon: Icons.link,
-                          label: 'Join Circle',
-                          onTap: () => context.push('/join'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
+                loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                error: (e, st) => const SliverToBoxAdapter(child: SizedBox.shrink()),
               ),
 
               // Section label
@@ -550,33 +557,83 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.symmetric(horizontal: 40),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: 88,
+              height: 88,
               decoration: BoxDecoration(
                 color: AppColors.accent.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(28),
               ),
               child: const Icon(
-                Icons.group_add_outlined,
-                size: 36,
+                Icons.people_outline_rounded,
+                size: 40,
                 color: AppColors.accent,
               ),
             ),
             const SizedBox(height: 24),
-            Text(
+            const Text(
               'No circles yet',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Create your first Ayuuto circle or join\nan existing one with an invite code.',
+              'Start your first Ayuuto circle or join\none with an invite code.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () => context.push('/create-group'),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Create a Circle'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: () => context.push('/join'),
+                icon: const Icon(Icons.link_rounded),
+                label: const Text('Join with Invite Code'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textPrimary,
+                  side: const BorderSide(color: AppColors.divider),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
