@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -119,6 +118,50 @@ class HomeScreen extends ConsumerWidget {
                 error: (e, st) => const SliverToBoxAdapter(child: SizedBox.shrink()),
               ),
 
+              // Tip banner — show when groups exist but low activity
+              groupsAsync.when(
+                data: (groups) {
+                  if (groups.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                  final totalPaid = groups.fold<int>(0, (sum, g) => sum + (g.memberCount - g.pendingCount));
+                  final totalMembers = groups.fold<int>(0, (sum, g) => sum + g.memberCount);
+                  if (totalPaid >= totalMembers && totalMembers > 0) {
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
+                  }
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.accent.withValues(alpha: 0.12)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.lightbulb_outline_rounded,
+                                size: 18, color: AppColors.accent.withValues(alpha: 0.7)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Share your circle code to invite members and start collecting',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                error: (e, st) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+              ),
+
               // Section label
               groupsAsync.when(
                 data: (groups) {
@@ -127,7 +170,7 @@ class HomeScreen extends ConsumerWidget {
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
                       child: Text(
-                        'Your Circles',
+                        'Active Circles (${groups.length})',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -205,11 +248,13 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalPot = groups.fold<double>(0, (sum, g) => sum + g.totalPot);
+    // Pot = contribution_amount * member_count per group (theoretical pot)
+    final totalPot = groups.fold<double>(
+        0, (sum, g) => sum + g.contributionAmount * g.memberCount);
     final totalMembers = groups.fold<int>(0, (sum, g) => sum + g.memberCount);
-    final totalPaid = groups.fold<int>(0, (sum, g) => sum + (g.memberCount - g.pendingCount));
-    final progress = totalMembers > 0 ? totalPaid / totalMembers : 0.0;
-    final pct = (progress * 100).round();
+    final totalPaid =
+        groups.fold<int>(0, (sum, g) => sum + (g.memberCount - g.pendingCount));
+    final totalPending = totalMembers - totalPaid;
 
     // Use first group's currency symbol, or £ as fallback
     final symbol = groups.isNotEmpty ? groups.first.currencySymbol : '£';
@@ -227,66 +272,77 @@ class _SummaryCard extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Left side — pot info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'TOTAL POT',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
-                    color: Colors.white.withValues(alpha: 0.6),
-                  ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'TOTAL POT',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '$symbol${_formatAmount(totalPot)}',
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        height: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'across ${groups.length} ${groups.length == 1 ? 'group' : 'groups'}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.55),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  '$symbol${_formatAmount(totalPot)}',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    height: 1.1,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'across ${groups.length} ${groups.length == 1 ? 'group' : 'groups'}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white.withValues(alpha: 0.55),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-
-          // Right side — progress ring
-          SizedBox(
-            width: 72,
-            height: 72,
-            child: CustomPaint(
-              painter: _ProgressRingPainter(
-                progress: progress,
-                trackColor: Colors.white.withValues(alpha: 0.12),
-                progressColor: AppColors.accent,
-                strokeWidth: 6,
+          const SizedBox(height: 16),
+          // Stats row
+          Row(
+            children: [
+              _SummaryStat(
+                icon: Icons.check_circle_outline_rounded,
+                label: 'Paid',
+                value: '$totalPaid/$totalMembers',
+                color: AppColors.accent,
               ),
-              child: Center(
-                child: Text(
-                  '$pct%',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
+              const SizedBox(width: 20),
+              _SummaryStat(
+                icon: Icons.schedule_rounded,
+                label: 'Pending',
+                value: '$totalPending',
+                color: totalPending > 0
+                    ? const Color(0xFFFFB74D)
+                    : Colors.white.withValues(alpha: 0.5),
               ),
-            ),
+              const SizedBox(width: 20),
+              _SummaryStat(
+                icon: Icons.loop_rounded,
+                label: 'Cycle',
+                value: groups.length == 1
+                    ? '${groups.first.currentCycle}'
+                    : groups.map((g) => g.currentCycle).join(', '),
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+            ],
           ),
         ],
       ),
@@ -295,8 +351,8 @@ class _SummaryCard extends StatelessWidget {
 
   String _formatAmount(double amount) {
     if (amount >= 1000) {
-      final formatted = (amount / 1000).toStringAsFixed(
-          amount % 1000 == 0 ? 0 : 1);
+      final formatted =
+          (amount / 1000).toStringAsFixed(amount % 1000 == 0 ? 0 : 1);
       return '${formatted}k';
     }
     return amount == amount.roundToDouble()
@@ -305,50 +361,43 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _ProgressRingPainter extends CustomPainter {
-  final double progress;
-  final Color trackColor;
-  final Color progressColor;
-  final double strokeWidth;
+class _SummaryStat extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
 
-  _ProgressRingPainter({
-    required this.progress,
-    required this.trackColor,
-    required this.progressColor,
-    required this.strokeWidth,
+  const _SummaryStat({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
   });
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - strokeWidth) / 2;
-
-    // Track
-    final trackPaint = Paint()
-      ..color = trackColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-    canvas.drawCircle(center, radius, trackPaint);
-
-    // Progress arc
-    final progressPaint = Paint()
-      ..color = progressColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2,
-      2 * math.pi * progress,
-      false,
-      progressPaint,
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 15, color: color),
+        const SizedBox(width: 5),
+        Text(
+          '$value ',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withValues(alpha: 0.45),
+          ),
+        ),
+      ],
     );
   }
-
-  @override
-  bool shouldRepaint(covariant _ProgressRingPainter oldDelegate) =>
-      oldDelegate.progress != progress;
 }
 
 // ── Action Button ────────────────────────────────────────
@@ -408,7 +457,9 @@ class _GroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final paidCount = group.memberCount - group.pendingCount;
-    final progress = group.memberCount > 0 ? paidCount / group.memberCount : 0.0;
+    final progress =
+        group.memberCount > 0 ? paidCount / group.memberCount : 0.0;
+    final pot = group.contributionAmount * group.memberCount;
 
     return Material(
       color: AppColors.surface,
@@ -422,122 +473,134 @@ class _GroupCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.divider),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Center(
-                  child: Text(
-                    group.name.isNotEmpty ? group.name[0].toUpperCase() : '?',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.accent,
+              Row(
+                children: [
+                  // Avatar
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-
-              // Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            group.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                              color: AppColors.textPrimary,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                    child: Center(
+                      child: Text(
+                        group.name.isNotEmpty
+                            ? group.name[0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.accent,
                         ),
-                        if (group.pendingRequestsCount > 0)
-                          Container(
-                            margin: const EdgeInsets.only(left: 6),
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: AppColors.warning,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '${group.memberCount} members · ${group.frequencyLabel} · Cycle ${group.currentCycle}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    // Progress bar
-                    Row(
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(3),
-                            child: LinearProgressIndicator(
-                              value: progress,
-                              minHeight: 5,
-                              backgroundColor: AppColors.divider,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                paidCount == group.memberCount
-                                    ? AppColors.success
-                                    : AppColors.accent,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                group.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                  color: AppColors.textPrimary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                          ),
+                            if (group.pendingRequestsCount > 0)
+                              Container(
+                                margin: const EdgeInsets.only(left: 6),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.warning.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '${group.pendingRequestsCount} request${group.pendingRequestsCount > 1 ? 's' : ''}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.warning,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(height: 2),
                         Text(
-                          '$paidCount/${group.memberCount}',
+                          '${group.memberCount} members · ${group.frequencyLabel} · Cycle ${group.currentCycle}',
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: paidCount == group.memberCount
-                                ? AppColors.success
-                                : AppColors.textSecondary,
+                            color: AppColors.textTertiary,
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Pot amount
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${group.currencySymbol}${_formatPot(pot)}',
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        'pot',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-
-              // Amount
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              const SizedBox(height: 12),
+              // Progress bar
+              Row(
                 children: [
-                  Text(
-                    '${group.currencySymbol}${group.totalPot.toStringAsFixed(group.totalPot == group.totalPot.roundToDouble() ? 0 : 2)}',
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 5,
+                        backgroundColor: AppColors.divider,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          paidCount == group.memberCount
+                              ? AppColors.success
+                              : AppColors.accent,
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'pot',
+                  const SizedBox(width: 10),
+                  Text(
+                    '$paidCount/${group.memberCount} paid',
                     style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textTertiary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: paidCount == group.memberCount
+                          ? AppColors.success
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -547,6 +610,17 @@ class _GroupCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatPot(double amount) {
+    if (amount >= 1000) {
+      final formatted =
+          (amount / 1000).toStringAsFixed(amount % 1000 == 0 ? 0 : 1);
+      return '${formatted}k';
+    }
+    return amount == amount.roundToDouble()
+        ? amount.toStringAsFixed(0)
+        : amount.toStringAsFixed(2);
   }
 }
 
