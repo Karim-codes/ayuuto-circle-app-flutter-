@@ -7,6 +7,7 @@ import '../../providers/providers.dart';
 import '../../models/member.dart';
 import '../../models/payout.dart';
 import '../../models/group.dart';
+import '../../widgets/confetti_overlay.dart';
 
 class GroupDetailScreen extends ConsumerStatefulWidget {
   final String groupId;
@@ -270,12 +271,37 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
                 group: group,
                 isOrganizer: isOrganizer,
                 onRefresh: _refresh,
+                onAllPaid: () {
+                  // Auto-switch to Payouts tab
+                  Future.delayed(const Duration(milliseconds: 400), () {
+                    if (mounted) {
+                      _tabController.animateTo(1);
+                    }
+                  });
+                },
               ),
               _PayoutsTab(
                 groupId: widget.groupId,
                 group: group,
                 isOrganizer: isOrganizer,
                 onRefresh: _refresh,
+                onPayoutConfirmed: () {
+                  // Small confetti burst, then switch back to Members
+                  if (mounted) {
+                    ConfettiOverlay.show(context);
+                    Future.delayed(const Duration(milliseconds: 1200), () {
+                      if (mounted) {
+                        _tabController.animateTo(0);
+                      }
+                    });
+                  }
+                },
+                onCycleComplete: () {
+                  // Big confetti burst for cycle completion
+                  if (mounted) {
+                    ConfettiOverlay.show(context, isBig: true);
+                  }
+                },
               ),
             ],
           ),
@@ -384,12 +410,14 @@ class _MembersTab extends ConsumerWidget {
   final Group group;
   final bool isOrganizer;
   final VoidCallback onRefresh;
+  final VoidCallback? onAllPaid;
 
   const _MembersTab({
     required this.groupId,
     required this.group,
     required this.isOrganizer,
     required this.onRefresh,
+    this.onAllPaid,
   });
 
   @override
@@ -445,7 +473,14 @@ class _MembersTab extends ConsumerWidget {
                 hasPaid: hasPaid,
                 isOrganizer: isOrganizer,
                 onToggle: isOrganizer
-                    ? () => _togglePayment(ref, context, member, hasPaid)
+                    ? () => _togglePayment(
+                          ref,
+                          context,
+                          member,
+                          hasPaid,
+                          members.length,
+                          paidMemberIds.length,
+                        )
                     : null,
               );
             },
@@ -464,6 +499,8 @@ class _MembersTab extends ConsumerWidget {
     BuildContext context,
     Member member,
     bool currentlyPaid,
+    int totalMembers,
+    int currentPaidCount,
   ) async {
     try {
       final service = ref.read(groupServiceProvider);
@@ -484,6 +521,11 @@ class _MembersTab extends ConsumerWidget {
       ref.invalidate(activePaymentsProvider(
           (groupId: groupId, cycleNumber: group.currentCycle)));
       ref.invalidate(myGroupsProvider);
+
+      // Check if this toggle made everyone paid
+      if (!currentlyPaid && currentPaidCount + 1 >= totalMembers) {
+        onAllPaid?.call();
+      }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -694,12 +736,16 @@ class _PayoutsTab extends ConsumerWidget {
   final Group group;
   final bool isOrganizer;
   final VoidCallback onRefresh;
+  final VoidCallback? onPayoutConfirmed;
+  final VoidCallback? onCycleComplete;
 
   const _PayoutsTab({
     required this.groupId,
     required this.group,
     required this.isOrganizer,
     required this.onRefresh,
+    this.onPayoutConfirmed,
+    this.onCycleComplete,
   });
 
   @override
@@ -863,13 +909,20 @@ class _PayoutsTab extends ConsumerWidget {
             amount: amount,
           );
       onRefresh();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Payout confirmed for ${recipient.name}'),
-            backgroundColor: AppColors.success,
-          ),
-        );
+
+      // Check if this was the last payout (cycle complete)
+      final service = ref.read(groupServiceProvider);
+      // After refresh, re-check round completion
+      // We need a small delay for providers to update
+      await Future.delayed(const Duration(milliseconds: 300));
+      final updatedMembers =
+          ref.read(membersProvider(groupId)).valueOrNull ?? [];
+      final isNowComplete = service.isRoundComplete(updatedMembers);
+
+      if (isNowComplete) {
+        onCycleComplete?.call();
+      } else {
+        onPayoutConfirmed?.call();
       }
     } catch (e) {
       if (context.mounted) {
