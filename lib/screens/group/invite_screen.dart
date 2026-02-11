@@ -48,10 +48,13 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
     );
   }
 
-  void _shareCode() {
+  void _shareCode(BuildContext ctx) {
     if (_inviteCode == null) return;
+    final box = ctx.findRenderObject() as RenderBox?;
     Share.share(
       'Join my Ayuuto circle on AyuutoCircle! Use invite code: $_inviteCode',
+      sharePositionOrigin:
+          box != null ? box.localToGlobal(Offset.zero) & box.size : Rect.zero,
     );
   }
 
@@ -174,10 +177,12 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _shareCode,
-                          icon: const Icon(Icons.share, size: 18),
-                          label: const Text('Share'),
+                        child: Builder(
+                          builder: (btnContext) => ElevatedButton.icon(
+                            onPressed: () => _shareCode(btnContext),
+                            icon: const Icon(Icons.share, size: 18),
+                            label: const Text('Share'),
+                          ),
                         ),
                       ),
                     ],
