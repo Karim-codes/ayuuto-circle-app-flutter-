@@ -79,13 +79,13 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
     final paidCount = payments.length;
     final totalMembers = members.length;
     final progress = totalMembers > 0 ? paidCount / totalMembers : 0.0;
-    final totalPot = group.contributionAmount * totalMembers;
+    final collectedAmount = group.contributionAmount * paidCount;
 
     final percentText = totalMembers > 0
         ? '${(progress * 100).toInt()}%'
         : '0%';
-    final potText =
-        '${group.currencySymbol}${totalPot.toStringAsFixed(totalPot == totalPot.roundToDouble() ? 0 : 2)}';
+    final collectedText =
+        '${group.currencySymbol}${collectedAmount.toStringAsFixed(collectedAmount == collectedAmount.roundToDouble() ? 0 : 2)}';
     final contribText =
         '${group.currencySymbol}${group.contributionAmount.toStringAsFixed(group.contributionAmount == group.contributionAmount.roundToDouble() ? 0 : 2)}';
     final pendingCount = totalMembers - paidCount;
@@ -99,7 +99,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF0A2540), Color(0xFF0D3B66)],
+              colors: [Color(0xFF0B2B26), Color(0xFF163D34)],
             ),
           ),
           child: SafeArea(
@@ -211,125 +211,139 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-                // Large progress ring + pot amount
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Progress ring
-                    SizedBox(
-                      width: 120,
-                      height: 120,
-                      child: CustomPaint(
-                        painter: _ProgressRingPainter(
-                          progress: progress,
-                          trackColor: Colors.white.withValues(alpha: 0.1),
-                          progressColor: AppColors.accent,
-                          strokeWidth: 8,
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                percentText,
-                                style: const TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  height: 1,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'COLLECTED',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 1,
-                                  color: Colors.white.withValues(alpha: 0.5),
-                                ),
-                              ),
-                            ],
+                // Large progress ring + divider + pot amount
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: [
+                      // Progress ring
+                      SizedBox(
+                        width: 130,
+                        height: 130,
+                        child: CustomPaint(
+                          painter: _ProgressRingPainter(
+                            progress: progress,
+                            trackColor: Colors.white.withValues(alpha: 0.12),
+                            progressColor: AppColors.accent,
+                            strokeWidth: 8,
                           ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 28),
-
-                    // Pot + details
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          potText,
-                          style: const TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            height: 1.1,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'CYCLE POT',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 1.2,
-                            color: Colors.white.withValues(alpha: 0.45),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  contribText,
+                                  percentText,
                                   style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.w800,
                                     color: Colors.white,
+                                    height: 1,
                                   ),
                                 ),
+                                const SizedBox(height: 3),
                                 Text(
-                                  group.frequencyLabel,
+                                  'COLLECTED',
                                   style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white.withValues(alpha: 0.45),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.8,
+                                    color: Colors.white.withValues(alpha: 0.5),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(width: 24),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 20),
+
+                      // Vertical divider
+                      Container(
+                        width: 1,
+                        height: 90,
+                        color: Colors.white.withValues(alpha: 0.12),
+                      ),
+
+                      const SizedBox(width: 24),
+
+                      // Pot + details
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              collectedText,
+                              style: const TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                height: 1.1,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'CYCLE POT',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 1.2,
+                                color: Colors.white.withValues(alpha: 0.45),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
                               children: [
-                                Text(
-                                  'Cycle ${group.currentCycle}',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      contribText,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    Text(
+                                      group.frequencyLabel,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white.withValues(alpha: 0.45),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  'of $totalMembers',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white.withValues(alpha: 0.45),
-                                  ),
+                                const SizedBox(width: 24),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Cycle ${group.currentCycle}',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    Text(
+                                      'of $totalMembers',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white.withValues(alpha: 0.45),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 20),
