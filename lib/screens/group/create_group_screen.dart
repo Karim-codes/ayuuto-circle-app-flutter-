@@ -31,6 +31,56 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
   static const _totalSteps = 3;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkTierLimit());
+  }
+
+  Future<void> _checkTierLimit() async {
+    final profile = ref.read(profileProvider).valueOrNull;
+    final groups = ref.read(myGroupsProvider).valueOrNull ?? [];
+    final tier = profile?.subscriptionTier ?? 'free';
+
+    if (tier == 'free' && groups.isNotEmpty) {
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.lock_outline_rounded, color: AppColors.warning, size: 24),
+              SizedBox(width: 10),
+              Text('Free Tier Limit'),
+            ],
+          ),
+          content: const Text(
+            'Free accounts can create 1 circle.\n\nUpgrade to Premium for unlimited circles and members.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                if (mounted) context.pop();
+              },
+              child: const Text('Go Back'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                if (mounted) context.pop();
+                // TODO: Navigate to upgrade/subscription screen
+              },
+              child: const Text('Upgrade'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     _nameController.dispose();
