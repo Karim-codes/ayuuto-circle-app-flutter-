@@ -21,6 +21,8 @@ dependencies:
   shimmer: ^3.0.0
   cached_network_image: ^3.4.1
   google_fonts: ^6.2.1
+  liquid_glass_widgets: ^0.3.0-dev.1
+  shared_preferences: ^2.3.4
 
 dev_dependencies:
   flutter_test:

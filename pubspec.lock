@@ -161,6 +161,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.1"
+  equatable:
+    dependency: transitive
+    description:
+      name: equatable
+      sha256: "3e0141505477fd8ad55d6eb4e7776d3fe8430be8e497ccb1521370c3f21a3e2b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.8"
   fake_async:
     dependency: transitive
     description:
@@ -416,6 +424,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.1.0"
+  liquid_glass_renderer:
+    dependency: transitive
+    description:
+      name: liquid_glass_renderer
+      sha256: "789be157494b38cdef7607bb9b63e7fe3fab76fae16149e52fa313c2d858cb3f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.0-dev.4"
+  liquid_glass_widgets:
+    dependency: "direct main"
+    description:
+      name: liquid_glass_widgets
+      sha256: "5ecb73d223c335bd80e322209f6a28330e7d3dadcae4b369ef116389fbbcaa84"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0-dev.1"
   logging:
     dependency: transitive
     description:
@@ -456,6 +480,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  motor:
+    dependency: transitive
+    description:
+      name: motor
+      sha256: cbd49f21b00e568c2b1a55f134ed803614a107782f4fea7769693bca32940c58
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   native_toolchain_c:
     dependency: transitive
     description:
@@ -633,7 +665,7 @@ packages:
     source: hosted
     version: "5.0.2"
   shared_preferences:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: shared_preferences
       sha256: "2939ae520c9024cb197fc20dee269cd8cdbf564c8b5746374ec6cacdc5169e64"

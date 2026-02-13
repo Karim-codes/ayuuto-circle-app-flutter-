@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/env.dart';
 import 'config/theme.dart';
@@ -9,10 +10,13 @@ import 'config/router.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Supabase.initialize(
-    url: Env.supabaseUrl,
-    anonKey: Env.supabaseAnonKey,
-  );
+  await Future.wait([
+    Supabase.initialize(
+      url: Env.supabaseUrl,
+      anonKey: Env.supabaseAnonKey,
+    ),
+    LiquidGlassWidgets.initialize(),
+  ]);
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

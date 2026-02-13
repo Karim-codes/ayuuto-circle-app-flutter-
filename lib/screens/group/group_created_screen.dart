@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
-import '../../widgets/confetti_overlay.dart';
+import 'widgets/confetti_overlay.dart';
 
 class GroupCreatedScreen extends StatefulWidget {
   final String groupId;

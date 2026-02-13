@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/theme.dart';
 
@@ -37,11 +38,20 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 2000));
     if (!mounted) return;
 
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingDone = prefs.getBool('onboarding_complete') ?? false;
+
+    if (!onboardingDone) {
+      if (mounted) context.go('/onboarding');
+      return;
+    }
+
+    if (!mounted) return;
     final session = Supabase.instance.client.auth.currentSession;
     if (session != null) {
-      context.go('/home');
+      if (mounted) context.go('/home');
     } else {
-      context.go('/sign-in');
+      if (mounted) context.go('/sign-in');
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../screens/auth/sign_in_screen.dart';
 import '../screens/auth/sign_up_screen.dart';
+import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/group/create_group_screen.dart';
 import '../screens/group/group_detail_screen.dart';
@@ -28,8 +29,9 @@ final router = GoRouter(
     final isAuthRoute = state.matchedLocation == '/sign-in' ||
         state.matchedLocation == '/sign-up';
     final isSplash = state.matchedLocation == '/';
+    final isOnboarding = state.matchedLocation == '/onboarding';
 
-    if (isSplash) return null;
+    if (isSplash || isOnboarding) return null;
     if (!isAuth && !isAuthRoute) return '/sign-in';
     if (isAuth && isAuthRoute) return '/home';
     return null;
@@ -38,6 +40,10 @@ final router = GoRouter(
     GoRoute(
       path: '/',
       builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingScreen(),
     ),
     GoRoute(
       path: '/sign-in',
