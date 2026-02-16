@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import '../../../config/theme.dart';
 import 'history_item.dart';
 
@@ -11,11 +10,43 @@ class HistoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isContribution = item.type == HistoryType.contribution;
+    final isPayout = item.type == HistoryType.payout;
+    final isMine = item.isCurrentUser;
+    final isMyPayout = isPayout && isMine;
+    final isMyContribution = isContribution && isMine;
     final color = isContribution ? const Color(0xFFFF6B6B) : AppColors.accent;
     final dateStr = DateFormat('d MMM, h:mm a').format(item.date.toLocal());
+    final amtStr = item.amount.toStringAsFixed(
+        item.amount == item.amount.roundToDouble() ? 0 : 2);
 
-    return GlassCard(
-      useOwnLayer: true,
+    // Title text
+    String title;
+    if (isMyContribution) {
+      title = 'Contribution';
+    } else if (isContribution) {
+      title = '${item.recipientName ?? 'Unknown'} contributed';
+    } else if (isMyPayout) {
+      title = 'Payout Received';
+    } else {
+      title = 'Payout to ${item.recipientName ?? 'Unknown'}';
+    }
+
+    // Highlight color for current user items
+    final isHighlighted = isMyPayout || isMyContribution;
+    final highlightColor = isMyPayout ? AppColors.accent : const Color(0xFFFF6B6B);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isHighlighted
+            ? highlightColor.withValues(alpha: 0.05)
+            : AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isHighlighted
+              ? highlightColor.withValues(alpha: 0.2)
+              : AppColors.divider,
+        ),
+      ),
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
@@ -24,7 +55,7 @@ class HistoryTile extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withValues(alpha: isHighlighted ? 0.15 : 0.1),
               borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(
@@ -42,13 +73,41 @@ class HistoryTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  isContribution ? 'Contribution' : 'Payout Received',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: AppColors.textPrimary,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: isHighlighted
+                              ? highlightColor
+                              : AppColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isMine) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: highlightColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'You',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: highlightColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -67,7 +126,7 @@ class HistoryTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${isContribution ? '-' : '+'}${item.currencySymbol}${item.amount.toStringAsFixed(item.amount == item.amount.roundToDouble() ? 0 : 2)}',
+                '${isContribution ? '-' : '+'}${item.currencySymbol}$amtStr',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,

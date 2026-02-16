@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import '../../../config/theme.dart';
 import '../../../models/group.dart';
 import '../../../models/member.dart';
@@ -132,12 +131,18 @@ class PayoutsTab extends ConsumerWidget {
     if (confirm != true) return;
 
     try {
+      final currentCycle = group.currentCycle;
       await ref.read(groupServiceProvider).confirmPayout(
             groupId: groupId,
-            cycleNumber: group.currentCycle,
+            cycleNumber: currentCycle,
             recipientMemberId: recipient.id,
             amount: amount,
           );
+      // Invalidate payments for current and next cycle so ticks reset
+      ref.invalidate(activePaymentsProvider(
+          (groupId: groupId, cycleNumber: currentCycle)));
+      ref.invalidate(activePaymentsProvider(
+          (groupId: groupId, cycleNumber: currentCycle + 1)));
       onRefresh();
 
       // Check if this was the last payout (cycle complete)
@@ -189,7 +194,7 @@ class _NextPayoutCard extends StatelessWidget {
         ? totalPot.toStringAsFixed(0)
         : totalPot.toStringAsFixed(2);
 
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
@@ -198,15 +203,8 @@ class _NextPayoutCard extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(22),
       ),
-      child: GlassContainer(
-        useOwnLayer: true,
-        settings: const LiquidGlassSettings(
-          thickness: 0.5,
-          blur: 6.0,
-          glassColor: Color(0x18FFFFFF),
-        ),
-        shape: const LiquidRoundedSuperellipse(borderRadius: 22),
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+      child: Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -271,7 +269,7 @@ class _NextPayoutCard extends StatelessWidget {
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              height: 46,
+              height: 50,
               child: ElevatedButton(
                 onPressed: allPaid ? onConfirm : null,
                 style: ElevatedButton.styleFrom(
@@ -351,7 +349,7 @@ class _RoundCompleteCard extends StatelessWidget {
             const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
-              height: 46,
+              height: 50,
               child: ElevatedButton(
                 onPressed: onNewRound,
                 child: const Text('Start New Round'),

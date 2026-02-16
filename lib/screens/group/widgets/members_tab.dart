@@ -265,35 +265,41 @@ class _MemberTile extends StatelessWidget {
               ),
             ),
 
-            // Toggle switch — liquid glass style
-            if (isOrganizer)
-              GlassSwitch(
-                value: hasPaid,
-                activeColor: AppColors.success,
-                useOwnLayer: true,
-                onChanged: (_) => onToggle?.call(),
-              )
-            else
-              // Read-only status for non-organizers
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: hasPaid
-                      ? AppColors.success.withValues(alpha: 0.1)
-                      : AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  hasPaid ? 'Paid' : 'Pending',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color:
-                        hasPaid ? AppColors.success : AppColors.textTertiary,
-                  ),
-                ),
-              ),
+            // Glass checkmark toggle
+            GestureDetector(
+              onTap: isOrganizer ? onToggle : null,
+              child: hasPaid
+                  ? GlassContainer(
+                      useOwnLayer: true,
+                      settings: LiquidGlassSettings(
+                        thickness: 0.6,
+                        blur: 4.0,
+                        glassColor: AppColors.success.withValues(alpha: 0.25),
+                      ),
+                      shape: const LiquidRoundedSuperellipse(borderRadius: 17),
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.success.withValues(alpha: 0.15),
+                        ),
+                        child: const Icon(Icons.check_rounded,
+                            size: 20, color: AppColors.success),
+                      ),
+                    )
+                  : Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.textTertiary.withValues(alpha: 0.25),
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+            ),
           ],
         ),
       ),

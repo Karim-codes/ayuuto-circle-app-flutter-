@@ -7,6 +7,8 @@ class HistoryItem {
   final String currency;
   final int cycleNumber;
   final DateTime date;
+  final String? recipientName;
+  final bool isCurrentUser;
 
   HistoryItem({
     required this.type,
@@ -15,6 +17,8 @@ class HistoryItem {
     required this.currency,
     required this.cycleNumber,
     required this.date,
+    this.recipientName,
+    this.isCurrentUser = false,
   });
 
   String get currencySymbol {

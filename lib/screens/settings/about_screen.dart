@@ -186,35 +186,6 @@ class AboutScreen extends StatelessWidget {
                     label: 'Developer',
                     value: 'AyuutoCircle Team',
                   ),
-                  const Divider(height: 20, color: AppColors.divider),
-                  _InfoRow(
-                    label: 'Platform',
-                    value: 'Flutter + Supabase',
-                  ),
-                  const Divider(height: 20, color: AppColors.divider),
-                  GestureDetector(
-                    onTap: () {
-                      showLicensePage(
-                        context: context,
-                        applicationName: 'AyuutoCircle',
-                        applicationVersion: '1.0.0',
-                      );
-                    },
-                    child: Row(
-                      children: [
-                        Text(
-                          'Open Source Licenses',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const Spacer(),
-                        Icon(Icons.chevron_right_rounded,
-                            size: 20, color: AppColors.textTertiary),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),

@@ -480,8 +480,12 @@ class _LatestActivitySection extends ConsumerWidget {
 
         final items = <_ActivityData>[];
 
+        final seen = <String>{};
         for (final p in payments) {
-          if (p['voided_at'] != null) continue;
+          final key =
+              '${p['member_id']}_${p['group_id']}_${p['cycle_number']}';
+          if (seen.contains(key)) continue;
+          seen.add(key);
           final group = p['groups'] as Map<String, dynamic>?;
           items.add(_ActivityData(
             isPayout: false,

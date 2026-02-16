@@ -32,10 +32,18 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
     super.dispose();
   }
 
-  void _refresh() {
+  void _refresh({int? cycleNumber}) {
     ref.invalidate(groupDetailProvider(widget.groupId));
     ref.invalidate(membersProvider(widget.groupId));
     ref.invalidate(payoutsProvider(widget.groupId));
+    ref.invalidate(myGroupsProvider);
+    // Invalidate active payments for the given cycle and neighbors
+    if (cycleNumber != null) {
+      ref.invalidate(activePaymentsProvider(
+          (groupId: widget.groupId, cycleNumber: cycleNumber)));
+      ref.invalidate(activePaymentsProvider(
+          (groupId: widget.groupId, cycleNumber: cycleNumber + 1)));
+    }
   }
 
   @override

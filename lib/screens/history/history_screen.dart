@@ -59,13 +59,30 @@ class HistoryScreen extends ConsumerWidget {
 
                   // Build combined timeline
                   final items = <HistoryItem>[];
+                  final memberIds =
+                      ((data['memberIds'] as List?) ?? [])
+                          .cast<String>()
+                          .toSet();
 
-                  // Add non-voided payments as contributions
+                  // Deduplicate payments: keep only the latest per
+                  // (member_id, group_id, cycle_number) so we count
+                  // one contribution per cycle even after voiding.
+                  final seen = <String>{};
                   for (final p in payments) {
-                    if (p['voided_at'] != null) continue;
+                    final key =
+                        '${p['member_id']}_${p['group_id']}_${p['cycle_number']}';
+                    if (seen.contains(key)) continue;
+                    seen.add(key);
                     final group = p['groups'] as Map<String, dynamic>?;
+                    final member =
+                        p['members'] as Map<String, dynamic>?;
                     final currency =
                         group?['currency'] as String? ?? 'GBP';
+                    final memberId =
+                        p['member_id'] as String? ?? '';
+                    final contributorName =
+                        member?['name'] as String? ?? 'Unknown';
+                    final isMe = memberIds.contains(memberId);
                     items.add(HistoryItem(
                       type: HistoryType.contribution,
                       groupName:
@@ -75,15 +92,24 @@ class HistoryScreen extends ConsumerWidget {
                       cycleNumber: p['cycle_number'] as int? ?? 0,
                       date:
                           DateTime.parse(p['created_at'] as String),
+                      recipientName: contributorName,
+                      isCurrentUser: isMe,
                     ));
                   }
 
-                  // Add payouts received
+                  // Add all payouts with recipient info
                   for (final po in payouts) {
                     final group =
                         po['groups'] as Map<String, dynamic>?;
+                    final member =
+                        po['members'] as Map<String, dynamic>?;
                     final currency =
                         group?['currency'] as String? ?? 'GBP';
+                    final recipientId =
+                        po['recipient_member_id'] as String? ?? '';
+                    final recipientName =
+                        member?['name'] as String? ?? 'Unknown';
+                    final isMe = memberIds.contains(recipientId);
                     items.add(HistoryItem(
                       type: HistoryType.payout,
                       groupName:
@@ -94,6 +120,8 @@ class HistoryScreen extends ConsumerWidget {
                           po['cycle_number'] as int? ?? 0,
                       date: DateTime.parse(
                           po['created_at'] as String),
+                      recipientName: recipientName,
+                      isCurrentUser: isMe,
                     ));
                   }
 
@@ -105,13 +133,16 @@ class HistoryScreen extends ConsumerWidget {
                         child: HistoryEmptyState());
                   }
 
-                  // Calculate totals
+                  // Calculate totals — only count current user's items
                   final totalContributed = items
-                      .where(
-                          (i) => i.type == HistoryType.contribution)
+                      .where((i) =>
+                          i.type == HistoryType.contribution &&
+                          i.isCurrentUser)
                       .fold<double>(0, (sum, i) => sum + i.amount);
                   final totalReceived = items
-                      .where((i) => i.type == HistoryType.payout)
+                      .where((i) =>
+                          i.type == HistoryType.payout &&
+                          i.isCurrentUser)
                       .fold<double>(0, (sum, i) => sum + i.amount);
                   final mainSymbol = items.isNotEmpty
                       ? items.first.currencySymbol
@@ -157,28 +188,91 @@ class HistoryScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 24),
 
-                      // Timeline grouped by month
-                      ...grouped.entries.expand((entry) => [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                  20, 8, 20, 10),
-                              child: Text(
-                                entry.key.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.8,
-                                  color: AppColors.textTertiary,
-                                ),
+                      // Timeline grouped by month, with round separators
+                      ...grouped.entries.expand((entry) {
+                        final widgets = <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                                20, 8, 20, 10),
+                            child: Text(
+                              entry.key.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.8,
+                                color: AppColors.textTertiary,
                               ),
                             ),
-                            ...entry.value.map((item) => Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(
-                                          20, 0, 20, 8),
-                                  child: HistoryTile(item: item),
-                                )),
-                          ]),
+                          ),
+                        ];
+
+                        int? lastCycle;
+                        String? lastGroup;
+                        for (final item in entry.value) {
+                          // Insert round separator when cycle changes
+                          if (lastCycle != null &&
+                              item.cycleNumber != lastCycle &&
+                              item.groupName == lastGroup) {
+                            widgets.add(
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                    20, 4, 20, 12),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        height: 1,
+                                        color: AppColors.divider,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 12),
+                                      child: Container(
+                                        padding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary
+                                              .withValues(alpha: 0.06),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          'Round ${item.cycleNumber}',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color:
+                                                AppColors.textTertiary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Container(
+                                        height: 1,
+                                        color: AppColors.divider,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+                          lastCycle = item.cycleNumber;
+                          lastGroup = item.groupName;
+
+                          widgets.add(Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                                20, 0, 20, 8),
+                            child: HistoryTile(item: item),
+                          ));
+                        }
+                        return widgets;
+                      }),
                       const SizedBox(height: 100),
                     ]),
                   );

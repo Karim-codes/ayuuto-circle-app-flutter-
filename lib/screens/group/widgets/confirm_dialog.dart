@@ -1,24 +1,45 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import '../../../config/theme.dart';
 
 Future<bool?> showConfirmDialog(
   BuildContext context,
   String title,
   String message,
 ) {
-  return showDialog<bool>(
+  return showCupertinoDialog<bool>(
     context: context,
-    builder: (context) => AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text(title),
-      content: Text(message),
+    builder: (context) => CupertinoAlertDialog(
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      content: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(
+          message,
+          style: TextStyle(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+            height: 1.4,
+          ),
+        ),
+      ),
       actions: [
-        TextButton(
+        CupertinoDialogAction(
           onPressed: () => Navigator.pop(context, false),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
+        CupertinoDialogAction(
+          isDefaultAction: true,
           onPressed: () => Navigator.pop(context, true),
-          child: const Text('Confirm'),
+          child: const Text(
+            'Confirm',
+            style: TextStyle(color: AppColors.accent),
+          ),
         ),
       ],
     ),

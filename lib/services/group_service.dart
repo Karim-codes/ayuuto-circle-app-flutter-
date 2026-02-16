@@ -318,21 +318,29 @@ class GroupService {
 
     if (memberIds.isEmpty) return {'payments': [], 'payouts': []};
 
-    // Get all payments (including voided) for this user's members
+    // Get group IDs the user belongs to
+    final groupIds =
+        (memberRows as List).map((r) => r['group_id'] as String).toSet().toList();
+
+    // Get all payments for the user's groups (with member name)
     final payments = await _client
         .from('payments')
-        .select('*, groups!inner(name, currency, contribution_amount)')
-        .inFilter('member_id', memberIds)
+        .select('*, groups!inner(name, currency, contribution_amount), members!inner(name, user_id)')
+        .inFilter('group_id', groupIds)
         .order('created_at', ascending: false);
 
-    // Get all payouts received by this user
+    // Get all payouts for the user's groups (with recipient name)
     final payouts = await _client
         .from('payouts')
-        .select('*, groups!inner(name, currency)')
-        .inFilter('recipient_member_id', memberIds)
+        .select('*, groups!inner(name, currency), members!payouts_recipient_member_id_fkey(name, user_id)')
+        .inFilter('group_id', groupIds)
         .order('created_at', ascending: false);
 
-    return {'payments': payments, 'payouts': payouts};
+    return {
+      'payments': payments,
+      'payouts': payouts,
+      'memberIds': memberIds,
+    };
   }
 
   // ── Helpers ─────────────────────────────────────────────

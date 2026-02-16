@@ -327,72 +327,213 @@ class _OrganizerMenu extends ConsumerWidget {
       ),
       shape: const LiquidRoundedSuperellipse(borderRadius: 14),
       padding: EdgeInsets.zero,
-      child: PopupMenuButton<String>(
-      icon: const Icon(Icons.more_horiz_rounded, color: Colors.white),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      onSelected: (value) async {
-        if (value == 'reset') {
-          final confirm = await showConfirmDialog(
-            context,
-            'New Round',
-            'Start a new cycle? This resets all payout statuses.',
-          );
-          if (confirm == true) {
-            await ref.read(groupServiceProvider).advanceCycle(groupId);
-            onRefresh();
-          }
-        } else if (value == 'delete') {
-          final confirm = await showConfirmDialog(
-            context,
-            'Delete Circle',
-            'Are you sure you want to permanently delete this circle? This action cannot be undone.',
-          );
-          if (confirm == true && context.mounted) {
-            try {
-              await ref.read(groupServiceProvider).deleteGroup(groupId);
-              ref.invalidate(myGroupsProvider);
-              if (context.mounted) {
-                context.go('/home');
-              }
-            } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Failed to delete: $e'),
-                    backgroundColor: AppColors.error,
-                  ),
+      child: IconButton(
+        icon: const Icon(Icons.more_horiz_rounded, color: Colors.white),
+        onPressed: () => _showActionSheet(context, ref),
+      ),
+    );
+  }
+
+  void _showActionSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 34),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.textTertiary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Title
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Text(
+                'Circle Options',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            const Divider(height: 1, color: AppColors.divider),
+            // New Round option
+            _SheetOption(
+              icon: Icons.refresh_rounded,
+              label: 'New Round',
+              subtitle: 'Start a new cycle and reset payout statuses',
+              iconColor: AppColors.accent,
+              onTap: () async {
+                Navigator.pop(ctx);
+                final confirm = await showConfirmDialog(
+                  context,
+                  'New Round',
+                  'Start a new cycle? This resets all payout statuses.',
                 );
-              }
-            }
-          }
-        }
-      },
-      itemBuilder: (_) => [
-        const PopupMenuItem(
-          value: 'reset',
-          child: Row(
-            children: [
-              Icon(Icons.refresh_rounded,
-                  size: 18, color: AppColors.textSecondary),
-              SizedBox(width: 10),
-              Text('New Round'),
-            ],
-          ),
+                if (confirm == true) {
+                  await ref.read(groupServiceProvider).advanceCycle(groupId);
+                  onRefresh();
+                }
+              },
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Divider(height: 1, color: AppColors.divider),
+            ),
+            // Delete Circle option
+            _SheetOption(
+              icon: Icons.delete_outline_rounded,
+              label: 'Delete Circle',
+              subtitle: 'Permanently remove this circle',
+              iconColor: AppColors.error,
+              labelColor: AppColors.error,
+              onTap: () async {
+                Navigator.pop(ctx);
+                final confirm = await showConfirmDialog(
+                  context,
+                  'Delete Circle',
+                  'Are you sure you want to permanently delete this circle? This action cannot be undone.',
+                );
+                if (confirm == true && context.mounted) {
+                  try {
+                    await ref
+                        .read(groupServiceProvider)
+                        .deleteGroup(groupId);
+                    ref.invalidate(myGroupsProvider);
+                    if (context.mounted) {
+                      context.go('/home');
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to delete: $e'),
+                          backgroundColor: AppColors.error,
+                        ),
+                      );
+                    }
+                  }
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+            // Cancel button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: TextButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: AppColors.surfaceVariant,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        const PopupMenuItem(
-          value: 'delete',
-          child: Row(
-            children: [
-              Icon(Icons.delete_outline_rounded,
-                  size: 18, color: AppColors.error),
-              SizedBox(width: 10),
-              Text('Delete Circle',
-                  style: TextStyle(color: AppColors.error)),
-            ],
-          ),
+      ),
+    );
+  }
+}
+
+class _SheetOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final Color iconColor;
+  final Color? labelColor;
+  final VoidCallback onTap;
+
+  const _SheetOption({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.iconColor,
+    this.labelColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(icon, size: 20, color: iconColor),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: labelColor ?? AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                size: 20, color: AppColors.textTertiary),
+          ],
         ),
-      ],
-    ),
+      ),
     );
   }
 }
