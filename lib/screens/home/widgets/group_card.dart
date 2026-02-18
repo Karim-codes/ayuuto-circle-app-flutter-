@@ -10,8 +10,9 @@ class GroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final paidCount = group.memberCount - group.pendingCount;
-    final progress =
-        group.memberCount > 0 ? paidCount / group.memberCount : 0.0;
+    final progress = group.memberCount > 0
+        ? paidCount / group.memberCount
+        : 0.0;
     final pot = group.contributionAmount * group.memberCount;
 
     return Material(
@@ -36,7 +37,14 @@ class GroupCard extends StatelessWidget {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.1),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.accent.withValues(alpha: 0.15),
+                          AppColors.accent.withValues(alpha: 0.05),
+                        ],
+                      ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
@@ -74,10 +82,13 @@ class GroupCard extends StatelessWidget {
                               Container(
                                 margin: const EdgeInsets.only(left: 6),
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.warning
-                                      .withValues(alpha: 0.12),
+                                  color: AppColors.warning.withValues(
+                                    alpha: 0.12,
+                                  ),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
@@ -125,6 +136,12 @@ class GroupCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(width: 12),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: AppColors.textTertiary.withValues(alpha: 0.5),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -132,31 +149,67 @@ class GroupCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 5,
-                        backgroundColor: AppColors.divider,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          paidCount == group.memberCount
-                              ? AppColors.success
-                              : AppColors.accent,
-                        ),
-                      ),
+                    child: TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 800),
+                      curve: Curves.easeOutCubic,
+                      tween: Tween<double>(begin: 0, end: progress),
+                      builder: (context, value, _) {
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: LinearProgressIndicator(
+                            value: value,
+                            minHeight: 5,
+                            backgroundColor: AppColors.divider,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              paidCount == group.memberCount &&
+                                      group.memberCount > 0
+                                  ? AppColors.success
+                                  : AppColors.accent,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Text(
-                    '$paidCount/${group.memberCount} paid',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: paidCount == group.memberCount
-                          ? AppColors.success
-                          : AppColors.textSecondary,
+                  if (paidCount == group.memberCount && group.memberCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            size: 12,
+                            color: AppColors.success,
+                          ),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'Complete',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.success,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Text(
+                      '$paidCount/${group.memberCount} paid',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],
@@ -168,8 +221,9 @@ class GroupCard extends StatelessWidget {
 
   static String _formatPot(double amount) {
     if (amount >= 1000) {
-      final formatted =
-          (amount / 1000).toStringAsFixed(amount % 1000 == 0 ? 0 : 1);
+      final formatted = (amount / 1000).toStringAsFixed(
+        amount % 1000 == 0 ? 0 : 1,
+      );
       return '${formatted}k';
     }
     return amount == amount.roundToDouble()

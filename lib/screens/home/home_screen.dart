@@ -8,6 +8,7 @@ import '../../providers/providers.dart';
 import 'widgets/summary_card.dart';
 import 'widgets/group_card.dart';
 import 'widgets/home_empty_state.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -45,7 +46,7 @@ class HomeScreen extends ConsumerWidget {
                           ),
                         ),
                         loading: () => Text(
-                          '${_greeting()}...',
+                          '${_greeting()} ${_greetingEmoji()}',
                           style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.w700,
@@ -53,7 +54,7 @@ class HomeScreen extends ConsumerWidget {
                           ),
                         ),
                         error: (e, st) => Text(
-                          _greeting(),
+                          '${_greeting()} ${_greetingEmoji()}',
                           style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.w700,
@@ -79,7 +80,8 @@ class HomeScreen extends ConsumerWidget {
                 data: (groups) {
                   if (groups.isEmpty) {
                     return const SliverToBoxAdapter(
-                        child: SizedBox(height: 16));
+                      child: SizedBox(height: 16),
+                    );
                   }
                   return SliverToBoxAdapter(
                     child: Padding(
@@ -88,18 +90,17 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   );
                 },
-                loading: () => const SliverToBoxAdapter(
-                    child: SizedBox(height: 16)),
-                error: (e, st) => const SliverToBoxAdapter(
-                    child: SizedBox(height: 16)),
+                loading: () =>
+                    const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                error: (e, st) =>
+                    const SliverToBoxAdapter(child: SizedBox(height: 16)),
               ),
 
               // Action buttons
               groupsAsync.when(
                 data: (groups) {
                   if (groups.isEmpty) {
-                    return const SliverToBoxAdapter(
-                        child: SizedBox.shrink());
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
                   }
                   return SliverToBoxAdapter(
                     child: Padding(
@@ -126,122 +127,112 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   );
                 },
-                loading: () => const SliverToBoxAdapter(
-                    child: SizedBox.shrink()),
-                error: (e, st) => const SliverToBoxAdapter(
-                    child: SizedBox.shrink()),
+                loading: () =>
+                    const SliverToBoxAdapter(child: SizedBox.shrink()),
+                error: (e, st) =>
+                    const SliverToBoxAdapter(child: SizedBox.shrink()),
               ),
 
               // Tip banner
               groupsAsync.when(
                 data: (groups) {
                   if (groups.isEmpty) {
-                    return const SliverToBoxAdapter(
-                        child: SizedBox.shrink());
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
                   }
                   final totalPaid = groups.fold<int>(
-                      0, (sum, g) => sum + (g.memberCount - g.pendingCount));
-                  final totalMembers =
-                      groups.fold<int>(0, (sum, g) => sum + g.memberCount);
+                    0,
+                    (sum, g) => sum + (g.memberCount - g.pendingCount),
+                  );
+                  final totalMembers = groups.fold<int>(
+                    0,
+                    (sum, g) => sum + g.memberCount,
+                  );
                   if (totalPaid >= totalMembers && totalMembers > 0) {
-                    return const SliverToBoxAdapter(
-                        child: SizedBox.shrink());
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
                   }
-                  return SliverToBoxAdapter(
+                  return const SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: AppColors.accent.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color:
-                                  AppColors.accent.withValues(alpha: 0.12)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.lightbulb_outline_rounded,
-                                size: 18,
-                                color: AppColors.accent
-                                    .withValues(alpha: 0.7)),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Share your circle code to invite members and start collecting',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textSecondary,
-                                  height: 1.3,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
+                      child: _TipBanner(),
                     ),
                   );
                 },
-                loading: () => const SliverToBoxAdapter(
-                    child: SizedBox.shrink()),
-                error: (e, st) => const SliverToBoxAdapter(
-                    child: SizedBox.shrink()),
+                loading: () =>
+                    const SliverToBoxAdapter(child: SizedBox.shrink()),
+                error: (e, st) =>
+                    const SliverToBoxAdapter(child: SizedBox.shrink()),
               ),
 
               // Section label
               groupsAsync.when(
                 data: (groups) {
                   if (groups.isEmpty) {
-                    return const SliverToBoxAdapter(
-                        child: SizedBox.shrink());
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
                   }
                   return SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
-                      child: Text(
-                        'Active Circles (${groups.length})',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
+                      child: Row(
+                        children: [
+                          Text(
+                            'Active Circles',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.accent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${groups.length}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
                 },
-                loading: () => const SliverToBoxAdapter(
-                    child: SizedBox.shrink()),
-                error: (e, st) => const SliverToBoxAdapter(
-                    child: SizedBox.shrink()),
+                loading: () =>
+                    const SliverToBoxAdapter(child: SizedBox.shrink()),
+                error: (e, st) =>
+                    const SliverToBoxAdapter(child: SizedBox.shrink()),
               ),
 
               // Groups list
               groupsAsync.when(
                 data: (groups) {
                   if (groups.isEmpty) {
-                    return const SliverFillRemaining(
-                        child: HomeEmptyState());
+                    return const SliverFillRemaining(child: HomeEmptyState());
                   }
                   return SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: GroupCard(group: groups[index]),
-                          );
-                        },
-                        childCount: groups.length,
-                      ),
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: GroupCard(group: groups[index]),
+                        );
+                      }, childCount: groups.length),
                     ),
                   );
                 },
                 loading: () => const SliverFillRemaining(
                   child: Center(
-                    child: CircularProgressIndicator(
-                        color: AppColors.accent),
+                    child: CircularProgressIndicator(color: AppColors.accent),
                   ),
                 ),
                 error: (error, _) => SliverFillRemaining(
@@ -249,16 +240,19 @@ class HomeScreen extends ConsumerWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.error_outline,
-                            size: 48, color: AppColors.textTertiary),
+                        const Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: AppColors.textTertiary,
+                        ),
                         const SizedBox(height: 16),
-                        Text('Failed to load groups',
-                            style:
-                                Theme.of(context).textTheme.titleMedium),
+                        Text(
+                          'Failed to load groups',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         const SizedBox(height: 8),
                         TextButton(
-                          onPressed: () =>
-                              ref.invalidate(myGroupsProvider),
+                          onPressed: () => ref.invalidate(myGroupsProvider),
                           child: const Text('Retry'),
                         ),
                       ],
@@ -271,13 +265,15 @@ class HomeScreen extends ConsumerWidget {
               groupsAsync.when(
                 data: (groups) {
                   if (groups.isEmpty) {
-                    return const SliverToBoxAdapter(
-                        child: SizedBox.shrink());
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
                   }
                   final totalPot = groups.fold<double>(
-                      0, (sum, g) => sum + g.contributionAmount * g.memberCount);
-                  final symbol =
-                      groups.isNotEmpty ? groups.first.currencySymbol : '£';
+                    0,
+                    (sum, g) => sum + g.contributionAmount * g.memberCount,
+                  );
+                  final symbol = groups.isNotEmpty
+                      ? groups.first.currencySymbol
+                      : '£';
                   return SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
@@ -318,7 +314,8 @@ class HomeScreen extends ConsumerWidget {
                                 child: _InsightTile(
                                   icon: Icons.people_rounded,
                                   label: 'Members',
-                                  value: '${groups.fold<int>(0, (s, g) => s + g.memberCount)}',
+                                  value:
+                                      '${groups.fold<int>(0, (s, g) => s + g.memberCount)}',
                                   color: AppColors.warning,
                                 ),
                               ),
@@ -339,8 +336,7 @@ class HomeScreen extends ConsumerWidget {
               groupsAsync.when(
                 data: (groups) {
                   if (groups.isEmpty) {
-                    return const SliverToBoxAdapter(
-                        child: SizedBox.shrink());
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
                   }
                   return _LatestActivitySection();
                 },
@@ -363,6 +359,15 @@ class HomeScreen extends ConsumerWidget {
     if (hour < 12) return 'Good morning';
     if (hour < 17) return 'Good afternoon';
     return 'Good evening';
+  }
+
+  static String _greetingEmoji() {
+    final hour = DateTime.now().hour;
+    if (hour < 6) return '🌙';
+    if (hour < 12) return '☀️';
+    if (hour < 17) return '🌤️';
+    if (hour < 20) return '🌆';
+    return '🌙';
   }
 
   static String _fmtCompact(double amount) {
@@ -439,6 +444,13 @@ class _InsightTile extends StatelessWidget {
         color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: color.withValues(alpha: 0.12)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -455,10 +467,7 @@ class _InsightTile extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.textTertiary,
-            ),
+            style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
           ),
         ],
       ),
@@ -482,29 +491,32 @@ class _LatestActivitySection extends ConsumerWidget {
 
         final seen = <String>{};
         for (final p in payments) {
-          final key =
-              '${p['member_id']}_${p['group_id']}_${p['cycle_number']}';
+          final key = '${p['member_id']}_${p['group_id']}_${p['cycle_number']}';
           if (seen.contains(key)) continue;
           seen.add(key);
           final group = p['groups'] as Map<String, dynamic>?;
-          items.add(_ActivityData(
-            isPayout: false,
-            groupName: group?['name'] as String? ?? 'Unknown',
-            amount: (p['amount'] as num).toDouble(),
-            currency: group?['currency'] as String? ?? 'GBP',
-            date: DateTime.parse(p['created_at'] as String),
-          ));
+          items.add(
+            _ActivityData(
+              isPayout: false,
+              groupName: group?['name'] as String? ?? 'Unknown',
+              amount: (p['amount'] as num).toDouble(),
+              currency: group?['currency'] as String? ?? 'GBP',
+              date: DateTime.parse(p['created_at'] as String),
+            ),
+          );
         }
 
         for (final po in payouts) {
           final group = po['groups'] as Map<String, dynamic>?;
-          items.add(_ActivityData(
-            isPayout: true,
-            groupName: group?['name'] as String? ?? 'Unknown',
-            amount: (po['amount'] as num).toDouble(),
-            currency: group?['currency'] as String? ?? 'GBP',
-            date: DateTime.parse(po['created_at'] as String),
-          ));
+          items.add(
+            _ActivityData(
+              isPayout: true,
+              groupName: group?['name'] as String? ?? 'Unknown',
+              amount: (po['amount'] as num).toDouble(),
+              currency: group?['currency'] as String? ?? 'GBP',
+              date: DateTime.parse(po['created_at'] as String),
+            ),
+          );
         }
 
         items.sort((a, b) => b.date.compareTo(a.date));
@@ -552,8 +564,11 @@ class _LatestActivitySection extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Icon(Icons.arrow_forward_rounded,
-                              size: 16, color: AppColors.accent),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 16,
+                            color: AppColors.accent,
+                          ),
                         ],
                       ),
                     ),
@@ -618,10 +633,9 @@ class _ActivityRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        item.isPayout ? AppColors.accent : const Color(0xFFFF6B6B);
+    final color = item.isPayout ? AppColors.accent : const Color(0xFFFF6B6B);
     final label = item.isPayout ? 'Payout received' : 'Contribution';
-    final dateStr = DateFormat('d MMM').format(item.date.toLocal());
+    final timeStr = _timeAgo(item.date);
     final amountStr =
         '${item.isPayout ? '+' : '-'}${item.currencySymbol}${item.amount == item.amount.roundToDouble() ? item.amount.toStringAsFixed(0) : item.amount.toStringAsFixed(2)}';
 
@@ -658,11 +672,8 @@ class _ActivityRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${item.groupName} · $dateStr',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textTertiary,
-                  ),
+                  '${item.groupName} · $timeStr',
+                  style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
                 ),
               ],
             ),
@@ -673,6 +684,112 @@ class _ActivityRow extends StatelessWidget {
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _timeAgo(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+
+    if (diff.inSeconds < 60) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return DateFormat('d MMM').format(date);
+  }
+}
+
+class _TipBanner extends StatefulWidget {
+  const _TipBanner();
+
+  @override
+  State<_TipBanner> createState() => _TipBannerState();
+}
+
+class _TipBannerState extends State<_TipBanner>
+    with SingleTickerProviderStateMixin {
+  bool _isVisible = true; // defaulting to true until prefs load
+  late AnimationController _pulseCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkDismissed();
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+  }
+
+  Future<void> _checkDismissed() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('tip_dismissed') == true) {
+      if (mounted) setState(() => _isVisible = false);
+    }
+  }
+
+  Future<void> _dismiss() async {
+    setState(() => _isVisible = false);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('tip_dismissed', true);
+  }
+
+  @override
+  void dispose() {
+    _pulseCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isVisible) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.accent.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.12)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AnimatedBuilder(
+            animation: _pulseCtrl,
+            builder: (context, child) {
+              return Opacity(
+                opacity: 0.6 + _pulseCtrl.value * 0.4,
+                child: child,
+              );
+            },
+            child: Icon(
+              Icons.lightbulb_outline_rounded,
+              size: 18,
+              color: AppColors.accent,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Share your circle code to invite members and start collecting',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                height: 1.3,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: _dismiss,
+            child: Icon(
+              Icons.close_rounded,
+              size: 16,
+              color: AppColors.textTertiary.withValues(alpha: 0.5),
             ),
           ),
         ],
