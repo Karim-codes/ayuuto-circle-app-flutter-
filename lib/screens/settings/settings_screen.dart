@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../../providers/providers.dart';
 import '../../providers/locale_provider.dart';
 import 'widgets/profile_header.dart';
+import 'widgets/reminders_sheet.dart';
 import 'about_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -289,6 +290,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: t.get('simple_mode'),
                     subtitle: t.get('simple_mode_desc'),
                     trailing: _SimpleModeToggle(),
+                  ),
+                  _ProfileMenuItem(
+                    icon: Icons.notifications_active_rounded,
+                    iconColor: const Color(0xFFEF4444),
+                    title: t.languageCode == 'so' ? 'Xusuusin' : 'Reminders',
+                    subtitle: t.languageCode == 'so'
+                        ? 'Xusuusin toddobaadlaha ah'
+                        : 'Weekly payment reminders',
+                    onTap: () => RemindersSheet.show(context),
                   ),
                   _ProfileMenuItem(
                     icon: Icons.info_outline_rounded,
