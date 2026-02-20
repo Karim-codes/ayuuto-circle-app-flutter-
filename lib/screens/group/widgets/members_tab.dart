@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import '../../../config/theme.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/group.dart';
 import '../../../models/member.dart';
 import '../../../providers/providers.dart';
@@ -32,6 +33,8 @@ class MembersTab extends ConsumerWidget {
       data: (members) {
         final payments = paymentsAsync.valueOrNull ?? [];
         final paidMemberIds = payments.map((p) => p.memberId).toSet();
+        final service = ref.read(groupServiceProvider);
+        final nextRecipient = service.getNextRecipient(members);
 
         return RefreshIndicator(
           color: AppColors.accent,
@@ -54,7 +57,7 @@ class MembersTab extends ConsumerWidget {
                           size: 14, color: AppColors.textTertiary),
                       const SizedBox(width: 6),
                       Text(
-                        'Tap the switch to mark payments',
+                        AppLocalizations.of(context).get('tap_to_mark'),
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textTertiary,
@@ -74,6 +77,7 @@ class MembersTab extends ConsumerWidget {
                 group: group,
                 hasPaid: hasPaid,
                 isOrganizer: isOrganizer,
+                isNextRecipient: nextRecipient?.id == member.id,
                 onToggle: isOrganizer
                     ? () => _togglePayment(
                           ref,
@@ -147,6 +151,7 @@ class _MemberTile extends StatelessWidget {
   final Group group;
   final bool hasPaid;
   final bool isOrganizer;
+  final bool isNextRecipient;
   final VoidCallback? onToggle;
 
   const _MemberTile({
@@ -154,6 +159,7 @@ class _MemberTile extends StatelessWidget {
     required this.group,
     required this.hasPaid,
     required this.isOrganizer,
+    this.isNextRecipient = false,
     this.onToggle,
   });
 
@@ -221,6 +227,25 @@ class _MemberTile extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (isNextRecipient && !member.hasReceivedPayout) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Text(
+                            AppLocalizations.of(context).get('next_up'),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.accent,
+                            ),
+                          ),
+                        ),
+                      ],
                       if (member.isOrganiser) ...[
                         const SizedBox(width: 6),
                         Container(
@@ -230,9 +255,9 @@ class _MemberTile extends StatelessWidget {
                             color: AppColors.primary.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(5),
                           ),
-                          child: const Text(
-                            'Organizer',
-                            style: TextStyle(
+                          child: Text(
+                            AppLocalizations.of(context).get('organizer'),
+                            style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                               color: AppColors.primary,
@@ -245,10 +270,10 @@ class _MemberTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     member.hasReceivedPayout
-                        ? 'Received payout'
+                        ? AppLocalizations.of(context).get('received_payout')
                         : hasPaid
-                            ? 'Paid this cycle'
-                            : '${group.currencySymbol}${group.contributionAmount.toStringAsFixed(group.contributionAmount == group.contributionAmount.roundToDouble() ? 0 : 2)} per cycle',
+                            ? AppLocalizations.of(context).get('paid_this_cycle')
+                            : '${group.currencySymbol}${group.contributionAmount.toStringAsFixed(group.contributionAmount == group.contributionAmount.roundToDouble() ? 0 : 2)} ${AppLocalizations.of(context).get('per_cycle')}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: member.hasReceivedPayout || hasPaid

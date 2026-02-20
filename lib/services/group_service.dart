@@ -343,6 +343,17 @@ class GroupService {
     };
   }
 
+  // ── Payout Order ──────────────────────────────────────────
+
+  Future<void> updatePayoutOrder(List<({String memberId, int position})> order) async {
+    for (final item in order) {
+      await _client
+          .from('members')
+          .update({'payout_position': item.position})
+          .eq('id', item.memberId);
+    }
+  }
+
   // ── Helpers ─────────────────────────────────────────────
 
   Member? getNextRecipient(List<Member> members) {
@@ -354,5 +365,9 @@ class GroupService {
 
   bool isRoundComplete(List<Member> members) {
     return members.every((m) => m.hasReceivedPayout);
+  }
+
+  bool hasAlreadyReceivedPayout(Member member) {
+    return member.hasReceivedPayout;
   }
 }

@@ -32,6 +32,34 @@ class AppColors {
 }
 
 class AppTheme {
+  static ThemeData get simpleLightTheme {
+    final base = lightTheme;
+    final textTheme = base.textTheme;
+
+    return base.copyWith(
+      textTheme: textTheme.copyWith(
+        headlineLarge: textTheme.headlineLarge?.copyWith(fontSize: 32),
+        headlineMedium: textTheme.headlineMedium?.copyWith(fontSize: 28),
+        headlineSmall: textTheme.headlineSmall?.copyWith(fontSize: 24),
+        titleLarge: textTheme.titleLarge?.copyWith(fontSize: 22),
+        titleMedium: textTheme.titleMedium?.copyWith(fontSize: 20),
+        bodyLarge: textTheme.bodyLarge?.copyWith(
+          fontSize: 18,
+          color: AppColors.textPrimary,
+        ),
+        bodyMedium: textTheme.bodyMedium?.copyWith(
+          fontSize: 16,
+          color: AppColors.textPrimary.withValues(alpha: 0.85),
+        ),
+        bodySmall: textTheme.bodySmall?.copyWith(
+          fontSize: 14,
+          color: AppColors.textSecondary,
+        ),
+        labelLarge: textTheme.labelLarge?.copyWith(fontSize: 16),
+      ),
+    );
+  }
+
   static ThemeData get lightTheme {
     final textTheme = GoogleFonts.interTextTheme();
 

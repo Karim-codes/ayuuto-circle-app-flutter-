@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
+import '../../l10n/app_localizations.dart';
 import '../../providers/providers.dart';
 import '../../models/group.dart';
 import 'widgets/confetti_overlay.dart';
@@ -130,9 +131,9 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
                 const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             unselectedLabelStyle:
                 const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-            tabs: const [
-              Tab(text: 'Members'),
-              Tab(text: 'Payouts'),
+            tabs: [
+              Tab(text: AppLocalizations.of(context).get('members_tab')),
+              Tab(text: AppLocalizations.of(context).get('payouts_tab')),
             ],
           ),
         ),

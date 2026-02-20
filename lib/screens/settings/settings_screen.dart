@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
+import '../../l10n/app_localizations.dart';
 import '../../providers/providers.dart';
+import '../../providers/locale_provider.dart';
 import 'widgets/profile_header.dart';
 import 'about_screen.dart';
 
@@ -160,6 +162,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -271,13 +274,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _ProfileMenuItem(
                     icon: Icons.edit_rounded,
                     iconColor: const Color(0xFF3B82F6),
-                    title: 'Edit Name',
+                    title: t.get('edit_name'),
                     onTap: _showEditNameSheet,
+                  ),
+                  _ProfileMenuItem(
+                    icon: Icons.translate_rounded,
+                    iconColor: const Color(0xFF10B981),
+                    title: t.get('language'),
+                    trailing: _LanguageToggle(),
+                  ),
+                  _ProfileMenuItem(
+                    icon: Icons.text_fields_rounded,
+                    iconColor: const Color(0xFFF59E0B),
+                    title: t.get('simple_mode'),
+                    subtitle: t.get('simple_mode_desc'),
+                    trailing: _SimpleModeToggle(),
                   ),
                   _ProfileMenuItem(
                     icon: Icons.info_outline_rounded,
                     iconColor: const Color(0xFF6366F1),
-                    title: 'About AyuutoCircle',
+                    title: t.get('about_app'),
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -292,7 +308,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _ProfileMenuItem(
                     icon: Icons.logout_rounded,
                     iconColor: AppColors.error,
-                    title: 'Sign Out',
+                    title: t.get('sign_out'),
                     titleColor: AppColors.error,
                     showChevron: false,
                     onTap: _signOut,
@@ -302,7 +318,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   // Version
                   Center(
                     child: Text(
-                      'AyuutoCircle v1.0.0',
+                      t.get('version'),
                       style: TextStyle(
                         fontSize: 11,
                         color: AppColors.textTertiary.withValues(alpha: 0.6),
@@ -323,17 +339,21 @@ class _ProfileMenuItem extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final String title;
+  final String? subtitle;
   final Color? titleColor;
   final bool showChevron;
   final VoidCallback? onTap;
+  final Widget? trailing;
 
   const _ProfileMenuItem({
     required this.icon,
     required this.iconColor,
     required this.title,
+    this.subtitle,
     this.titleColor,
     this.showChevron = true,
     this.onTap,
+    this.trailing,
   });
 
   @override
@@ -360,16 +380,31 @@ class _ProfileMenuItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 14),
                 Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: titleColor ?? AppColors.textPrimary,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: titleColor ?? AppColors.textPrimary,
+                        ),
+                      ),
+                      if (subtitle != null)
+                        Text(
+                          subtitle!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                if (showChevron)
+                if (trailing != null)
+                  trailing!
+                else if (showChevron)
                   Icon(Icons.chevron_right_rounded,
                       size: 22, color: AppColors.textTertiary),
               ],
@@ -377,6 +412,65 @@ class _ProfileMenuItem extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ── Language Toggle ─────────────────────────────────────
+
+class _LanguageToggle extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = ref.watch(localeProvider);
+    final isEn = locale.languageCode == 'en';
+
+    return GestureDetector(
+      onTap: () {
+        ref.read(localeProvider.notifier).setLocale(
+              isEn ? const Locale('so') : const Locale('en'),
+            );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.accent.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              isEn ? '🇬🇧 EN' : '🇸🇴 SO',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.accent,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.swap_horiz_rounded,
+              size: 16,
+              color: AppColors.accent,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Simple Mode Toggle ──────────────────────────────────
+
+class _SimpleModeToggle extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isSimple = ref.watch(simpleModeProvider);
+
+    return Switch.adaptive(
+      value: isSimple,
+      activeTrackColor: AppColors.accent,
+      onChanged: (_) => ref.read(simpleModeProvider.notifier).toggle(),
     );
   }
 }

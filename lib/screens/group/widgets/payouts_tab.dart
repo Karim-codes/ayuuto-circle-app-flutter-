@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/theme.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/group.dart';
 import '../../../models/member.dart';
 import '../../../models/payout.dart';
@@ -79,7 +80,7 @@ class PayoutsTab extends ConsumerWidget {
               if (payouts.isNotEmpty) ...[
                 const SizedBox(height: 24),
                 Text(
-                  'PAYOUT HISTORY',
+                  AppLocalizations.of(context).get('payout_history'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -119,13 +120,32 @@ class PayoutsTab extends ConsumerWidget {
     Member recipient,
     double amount,
   ) async {
+    final t = AppLocalizations.of(context);
+
+    // Guard: prevent double payout
+    if (recipient.hasReceivedPayout) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(t.format('already_received', {'name': recipient.name})),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+      }
+      return;
+    }
+
     final amtText = amount == amount.roundToDouble()
         ? amount.toStringAsFixed(0)
         : amount.toStringAsFixed(2);
     final confirm = await showConfirmDialog(
       context,
-      'Confirm Payout',
-      'Confirm ${group.currencySymbol}$amtText payout to ${recipient.name}?\n\nThis will void all current payments and mark ${recipient.name} as received.',
+      t.get('confirm_payout_title'),
+      t.format('confirm_payout_msg', {
+        'symbol': group.currencySymbol,
+        'amount': amtText,
+        'name': recipient.name,
+      }),
     );
 
     if (confirm != true) return;
@@ -209,7 +229,7 @@ class _NextPayoutCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'NEXT PAYOUT',
+            AppLocalizations.of(context).get('next_payout'),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -255,7 +275,7 @@ class _NextPayoutCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    'Collecting...',
+                    AppLocalizations.of(context).get('collecting'),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -283,7 +303,7 @@ class _NextPayoutCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(
-                  allPaid ? 'Confirm Payout' : 'Waiting for all payments',
+                  allPaid ? AppLocalizations.of(context).get('confirm_payout') : AppLocalizations.of(context).get('waiting_for_payments'),
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
@@ -330,9 +350,9 @@ class _RoundCompleteCard extends StatelessWidget {
                 size: 28, color: AppColors.success),
           ),
           const SizedBox(height: 14),
-          const Text(
-            'Round Complete!',
-            style: TextStyle(
+          Text(
+            AppLocalizations.of(context).get('round_complete'),
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
@@ -340,7 +360,7 @@ class _RoundCompleteCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'All members have received their payout.',
+            AppLocalizations.of(context).get('all_members_received'),
             style:
                 TextStyle(fontSize: 14, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
@@ -352,7 +372,7 @@ class _RoundCompleteCard extends StatelessWidget {
               height: 50,
               child: ElevatedButton(
                 onPressed: onNewRound,
-                child: const Text('Start New Round'),
+                child: Text(AppLocalizations.of(context).get('start_new_round')),
               ),
             ),
           ],
@@ -463,9 +483,9 @@ class _PayoutsEmptyState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'No payouts yet',
-            style: TextStyle(
+          Text(
+            AppLocalizations.of(context).get('no_payouts_yet'),
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
@@ -473,7 +493,7 @@ class _PayoutsEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Payouts will appear here once confirmed',
+            AppLocalizations.of(context).get('payouts_will_appear'),
             style: TextStyle(
               fontSize: 13,
               color: AppColors.textTertiary,

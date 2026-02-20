@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import '../../config/theme.dart';
+import '../../l10n/app_localizations.dart';
 import '../../providers/providers.dart';
 import 'widgets/summary_card.dart';
 import 'widgets/group_card.dart';
@@ -17,6 +18,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final groupsAsync = ref.watch(myGroupsProvider);
     final profileAsync = ref.watch(profileProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -38,7 +40,7 @@ class HomeScreen extends ConsumerWidget {
                     children: [
                       profileAsync.when(
                         data: (profile) => Text(
-                          '${_greeting()}, ${profile?.fullName.split(' ').first ?? 'there'}',
+                          '${_greeting(t)}, ${profile?.fullName.split(' ').first ?? 'there'}',
                           style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.w700,
@@ -46,7 +48,7 @@ class HomeScreen extends ConsumerWidget {
                           ),
                         ),
                         loading: () => Text(
-                          '${_greeting()} ${_greetingEmoji()}',
+                          '${_greeting(t)} ${_greetingEmoji()}',
                           style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.w700,
@@ -54,7 +56,7 @@ class HomeScreen extends ConsumerWidget {
                           ),
                         ),
                         error: (e, st) => Text(
-                          '${_greeting()} ${_greetingEmoji()}',
+                          '${_greeting(t)} ${_greetingEmoji()}',
                           style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.w700,
@@ -64,7 +66,7 @@ class HomeScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Your Ayuuto circles',
+                        t.get('your_circles'),
                         style: TextStyle(
                           fontSize: 14,
                           color: AppColors.textSecondary,
@@ -110,7 +112,7 @@ class HomeScreen extends ConsumerWidget {
                           Expanded(
                             child: _ActionButton(
                               icon: Icons.add_circle_outline,
-                              label: 'New Circle',
+                              label: t.get('new_circle'),
                               onTap: () => context.push('/create-group'),
                             ),
                           ),
@@ -118,7 +120,7 @@ class HomeScreen extends ConsumerWidget {
                           Expanded(
                             child: _ActionButton(
                               icon: Icons.link,
-                              label: 'Join Circle',
+                              label: t.get('join_circle'),
                               onTap: () => context.push('/join'),
                             ),
                           ),
@@ -175,7 +177,7 @@ class HomeScreen extends ConsumerWidget {
                       child: Row(
                         children: [
                           Text(
-                            'Active Circles',
+                            t.get('active_circles'),
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -247,13 +249,13 @@ class HomeScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Failed to load groups',
+                          t.get('failed_to_load_groups'),
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
                         TextButton(
                           onPressed: () => ref.invalidate(myGroupsProvider),
-                          child: const Text('Retry'),
+                          child: Text(t.get('retry')),
                         ),
                       ],
                     ),
@@ -282,7 +284,7 @@ class HomeScreen extends ConsumerWidget {
                         children: [
                           const SizedBox(height: 4),
                           Text(
-                            'Quick Insights',
+                            t.get('quick_insights'),
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -295,7 +297,7 @@ class HomeScreen extends ConsumerWidget {
                               Expanded(
                                 child: _InsightTile(
                                   icon: Icons.groups_rounded,
-                                  label: 'Circles',
+                                  label: t.get('circles'),
                                   value: '${groups.length}',
                                   color: AppColors.accent,
                                 ),
@@ -304,7 +306,7 @@ class HomeScreen extends ConsumerWidget {
                               Expanded(
                                 child: _InsightTile(
                                   icon: Icons.account_balance_wallet_rounded,
-                                  label: 'Total Pot',
+                                  label: t.get('total_pot'),
                                   value: '$symbol${_fmtCompact(totalPot)}',
                                   color: AppColors.info,
                                 ),
@@ -313,7 +315,7 @@ class HomeScreen extends ConsumerWidget {
                               Expanded(
                                 child: _InsightTile(
                                   icon: Icons.people_rounded,
-                                  label: 'Members',
+                                  label: t.get('members'),
                                   value:
                                       '${groups.fold<int>(0, (s, g) => s + g.memberCount)}',
                                   color: AppColors.warning,
@@ -354,11 +356,11 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  static String _greeting() {
+  static String _greeting(AppLocalizations t) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return t.get('good_morning');
+    if (hour < 17) return t.get('good_afternoon');
+    return t.get('good_evening');
   }
 
   static String _greetingEmoji() {
@@ -480,6 +482,7 @@ class _InsightTile extends StatelessWidget {
 class _LatestActivitySection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final t = AppLocalizations.of(context);
     final historyAsync = ref.watch(userHistoryProvider);
 
     return historyAsync.when(
@@ -534,7 +537,7 @@ class _LatestActivitySection extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Latest Activity',
+                  t.get('latest_activity'),
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -556,7 +559,7 @@ class _LatestActivitySection extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Show More',
+                            t.get('show_more'),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -633,8 +636,9 @@ class _ActivityRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     final color = item.isPayout ? AppColors.accent : const Color(0xFFFF6B6B);
-    final label = item.isPayout ? 'Payout received' : 'Contribution';
+    final label = item.isPayout ? t.get('payout_received') : t.get('contribution');
     final timeStr = _timeAgo(item.date);
     final amountStr =
         '${item.isPayout ? '+' : '-'}${item.currencySymbol}${item.amount == item.amount.roundToDouble() ? item.amount.toStringAsFixed(0) : item.amount.toStringAsFixed(2)}';
@@ -775,7 +779,7 @@ class _TipBannerState extends State<_TipBanner>
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Share your circle code to invite members and start collecting',
+              AppLocalizations.of(context).get('tip_share_code'),
               style: TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,

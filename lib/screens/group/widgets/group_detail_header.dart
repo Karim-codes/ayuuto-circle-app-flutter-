@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import '../../../config/theme.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/group.dart';
 import '../../../providers/providers.dart';
 import 'confirm_dialog.dart';
+import 'payout_order_sheet.dart';
 import 'progress_ring_painter.dart';
 
 class GroupDetailHeader extends ConsumerWidget {
@@ -30,6 +32,7 @@ class GroupDetailHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final t = AppLocalizations.of(context);
     final collectedAmount = group.contributionAmount * paidCount;
     final percentText =
         totalMembers > 0 ? '${(progress * 100).toInt()}%' : '0%';
@@ -244,7 +247,7 @@ class GroupDetailHeader extends ConsumerWidget {
                 children: [
                   _HeaderStat(
                     value: '$paidCount',
-                    label: 'Paid',
+                    label: t.get('paid'),
                     dotColor: AppColors.accent,
                   ),
                   Container(
@@ -254,7 +257,7 @@ class GroupDetailHeader extends ConsumerWidget {
                   ),
                   _HeaderStat(
                     value: '$pendingCount',
-                    label: 'Pending',
+                    label: t.get('pending'),
                     dotColor: const Color(0xFFFFB020),
                   ),
                   Container(
@@ -264,7 +267,7 @@ class GroupDetailHeader extends ConsumerWidget {
                   ),
                   _HeaderStat(
                     value: '$totalMembers',
-                    label: 'Members',
+                    label: t.get('members'),
                     dotColor: const Color(0xFF60A5FA),
                   ),
                 ],
@@ -370,7 +373,7 @@ class _OrganizerMenu extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Text(
-                'Circle Options',
+                AppLocalizations.of(context).get('payout_order'),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -379,18 +382,49 @@ class _OrganizerMenu extends ConsumerWidget {
               ),
             ),
             const Divider(height: 1, color: AppColors.divider),
+            // Payout Order option
+            _SheetOption(
+              icon: Icons.swap_vert_rounded,
+              label: AppLocalizations.of(context).get('manage_order'),
+              subtitle: AppLocalizations.of(context).get('payout_order_subtitle'),
+              iconColor: const Color(0xFF6366F1),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final members = ref.read(membersProvider(groupId)).valueOrNull ?? [];
+                final saved = await PayoutOrderSheet.show(
+                  context,
+                  groupId: groupId,
+                  members: members,
+                );
+                if (saved == true) {
+                  onRefresh();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(AppLocalizations.of(context).get('order_saved')),
+                        backgroundColor: AppColors.success,
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Divider(height: 1, color: AppColors.divider),
+            ),
             // New Round option
             _SheetOption(
               icon: Icons.refresh_rounded,
-              label: 'New Round',
-              subtitle: 'Start a new cycle and reset payout statuses',
+              label: AppLocalizations.of(context).get('new_round'),
+              subtitle: AppLocalizations.of(context).get('new_round_confirm'),
               iconColor: AppColors.accent,
               onTap: () async {
                 Navigator.pop(ctx);
                 final confirm = await showConfirmDialog(
                   context,
-                  'New Round',
-                  'Start a new cycle? This resets all payout statuses.',
+                  AppLocalizations.of(context).get('new_round'),
+                  AppLocalizations.of(context).get('new_round_confirm'),
                 );
                 if (confirm == true) {
                   await ref.read(groupServiceProvider).advanceCycle(groupId);
@@ -405,16 +439,16 @@ class _OrganizerMenu extends ConsumerWidget {
             // Delete Circle option
             _SheetOption(
               icon: Icons.delete_outline_rounded,
-              label: 'Delete Circle',
-              subtitle: 'Permanently remove this circle',
+              label: AppLocalizations.of(context).get('delete_circle'),
+              subtitle: AppLocalizations.of(context).get('delete_circle_confirm'),
               iconColor: AppColors.error,
               labelColor: AppColors.error,
               onTap: () async {
                 Navigator.pop(ctx);
                 final confirm = await showConfirmDialog(
                   context,
-                  'Delete Circle',
-                  'Are you sure you want to permanently delete this circle? This action cannot be undone.',
+                  AppLocalizations.of(context).get('delete_circle'),
+                  AppLocalizations.of(context).get('delete_circle_confirm'),
                 );
                 if (confirm == true && context.mounted) {
                   try {
@@ -429,7 +463,7 @@ class _OrganizerMenu extends ConsumerWidget {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Failed to delete: $e'),
+                          content: Text('${AppLocalizations.of(context).get('failed_to_delete')}: $e'),
                           backgroundColor: AppColors.error,
                         ),
                       );
@@ -454,7 +488,7 @@ class _OrganizerMenu extends ConsumerWidget {
                   ),
                   onPressed: () => Navigator.pop(ctx),
                   child: Text(
-                    'Cancel',
+                    AppLocalizations.of(context).get('cancel'),
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
